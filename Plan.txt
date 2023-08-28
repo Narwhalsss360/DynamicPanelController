@@ -1,0 +1,34 @@
+Program Settings:
+	Potentiometer Polling Rate -> Hz
+
+Program Functionalites:
+	Input Update:
+		Update of interface device:
+			Such as Button State Update
+	Activator:
+		Something that does activates the running of an action:
+			Such as Button State Update
+	Action:
+		Changes something on computer/a program
+
+	Potentiometer Calibration
+
+	Extensions:
+		Actions
+
+Types:
+	Panel Descriptor -> Struct:
+		DisplayCount -> byte
+		DisplayTypes[DisplayCount] -> byte:
+			0: Row-Column ASCII
+			1: 7-Segment Display
+		DisplayDescriptorLength -> byte
+		DisplayDescriptorJaggedLength[DisplayDescriptorLength] -> byte
+		DisplayDescriptort[DisplayDescriptorLength][DisplayDescriptorJaggedLength(i)] -> byte:
+			Row-Column ASCII:
+				Rows -> byte
+				Columns -> byte
+			7-Segment Display:
+				Digit Count -> byte
+		Button Count -> byte
+		Potentiometer Count -> byte

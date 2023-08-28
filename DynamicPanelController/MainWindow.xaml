@@ -1,0 +1,25 @@
+﻿<Window x:Class="DynamicPanelController.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DynamicPanelController"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="45"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <ComboBox x:Name="PortSelection" Width="100" HorizontalAlignment="Left" Margin="5" DropDownOpened="PortSelectionOpened" DropDownClosed="PortSelectionClosed" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+            <Button x:Name="PortConnectionToggle" Content="Connect" IsEnabled="False" Width="80" Margin="5" Click="ToggleConnection"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="EditProfile" Width="50" Content="Edit" Margin="5" IsEnabled="False"/>
+            <ComboBox x:Name="ProfileSelection" DropDownOpened="ProfileSelectionOpened" DropDownClosed="ProfileSelectionClosed"  Width="160" HorizontalAlignment="Right" Margin="5" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+            <Button x:Name="EditSettings" Content="Settings" Width="60" Margin="5"/>
+        </StackPanel>
+        <TextBox x:Name="LogBox" TextChanged="LogBoxTextChanged" Grid.Row="1" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="5" />
+    </Grid>
+</Window>
