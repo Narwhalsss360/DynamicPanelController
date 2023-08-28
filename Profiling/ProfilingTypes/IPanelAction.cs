@@ -9,13 +9,13 @@ namespace Profiling.ProfilingTypes
         public PanelActionDescriptorAttribute(string Name) => this.Name = Name;
     }
 
-    public interface PanelAction
+    public interface IPanelAction
     {
         object? Do();
     }
 
     public static class PanelActionExtensions
     {
-        public static PanelActionDescriptorAttribute? GetDescriptorAttribute(this PanelAction Action) => Action.GetType().GetCustomAttribute<PanelActionDescriptorAttribute>();
+        public static PanelActionDescriptorAttribute? GetDescriptorAttribute(this IPanelAction Action) => Action.GetType().GetCustomAttribute<PanelActionDescriptorAttribute>();
     }
 }

@@ -28,10 +28,11 @@ namespace DynamicPanelController
 
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
         Thread SendSourceMappingsThread;
-        ManualResetEvent SendThreadSynchronizer = new(false);
+        bool SuspendSendThread = false;
         PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
+        public bool Communicating { get; private set; } = false;
 
         public struct AppSettings
         {
@@ -49,7 +50,10 @@ namespace DynamicPanelController
 
         public string CurrentLog { get; private set; } = string.Empty;
 
-        List<EventHandler> LogChangedHandlers = new();
+        public event EventHandler? LogChangedHandlers;
+        public event EventHandler? CommunicationsStarted;
+        public event EventHandler? CommunicationsStopped;
+
 
         App()
         {
@@ -119,7 +123,7 @@ namespace DynamicPanelController
             {
                 foreach (Type Interface in Type.GetInterfaces())
                 {
-                    if (Interface == typeof(PanelAction))
+                    if (Interface == typeof(IPanelAction))
                     {
                         if (Type.GetCustomAttribute<PanelActionDescriptorAttribute>() is null)
                         {
@@ -194,46 +198,54 @@ namespace DynamicPanelController
         {
             Info($"Starting communications on port { Port.PortName }");
             Port.Open();
-            SendThreadSynchronizer.Set();
+            SuspendSendThread = false;
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
                 SendSourceMappingsThread.Start();
+            Communicating = true;
+            CommunicationsStarted?.Invoke(this, new EventArgs());
         }
 
         void SendSourceMappings()
         {
-            if (!Port.IsOpen)
-                return;
-            if (SelectedProfileIndex == -1 || Profiles.Count == 0)
-                return;
-            if (Profiles[SelectedProfileIndex].SourceMappings.Count == 0)
-                return;
-
-            foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
+            while (!SuspendSendThread)
             {
-                List<byte> Bytes = new() { SourceMapping.Key };
-                if (SourceMapping.Value.GetSourceValue() is not string OutString)
+                if (!Port.IsOpen)
                     continue;
-                Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
-                Bytes.Add(0);
+                if (SelectedProfileIndex == -1 || Profiles.Count == 0)
+                    continue;
+                if (Profiles[SelectedProfileIndex].SourceMappings.Count == 0)
+                    continue;
 
-                try
+                foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                 {
-                    Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
-                }
-                catch (Exception)
-                {
-                    Error($"Device on port { Port.PortName } disconnected.");
-                    StopPortCommunication();
+                    List<byte> Bytes = new() { SourceMapping.Key };
+                    if (SourceMapping.Value.GetSourceValue() is not string OutString)
+                        continue;
+                    Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
+                    Bytes.Add(0);
+
+                    try
+                    {
+                        if (SuspendSendThread)
+                            continue;
+                        Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
+                    }
+                    catch (Exception)
+                    {
+                        Error($"Device on port { Port.PortName } disconnected.");
+                        StopPortCommunication();
+                    }
                 }
             }
-            SendThreadSynchronizer.WaitOne();
         }
 
         public void StopPortCommunication()
         {
             Info($"Stopping communications on port {Port.PortName}");
-            SendThreadSynchronizer.Reset();
+            SuspendSendThread = true;
             Port.Close();
+            Communicating = false;
+            CommunicationsStopped?.Invoke(this, new EventArgs());
         }
 
         void PacketsCollected(object? Sender, PacketsReadyEventArgs Args)
@@ -306,7 +318,7 @@ namespace DynamicPanelController
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
             List<EventHandler>? Handlers = GetProperty<Extension, List<EventHandler>>("ExitingHandlers");
-            Handlers?.ForEach(Handler => Handler.Invoke(Sender, Args));
+            Handlers?.ForEach(Handler => Handler.Invoke(this, new EventArgs()));
             Info("Program exiting");
             using (var LogStream = new StreamWriter(Settings.LogPath, true))
                 LogStream.Write(CurrentLog);
@@ -322,7 +334,7 @@ namespace DynamicPanelController
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
             CurrentLog += $"{ DateTime.Now } Info:{ Message }";
-            LogChangedHandlers.ForEach(H => H.Invoke(this, new EventArgs()));
+            LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
         public void Warn(string Message)
@@ -331,7 +343,7 @@ namespace DynamicPanelController
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
             CurrentLog += $"{ DateTime.Now } Warning:{ Message }";
-            LogChangedHandlers.ForEach(H => H.Invoke(this, new EventArgs()));
+            LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
         public void Error(string Message)
@@ -340,12 +352,12 @@ namespace DynamicPanelController
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
             CurrentLog += $"{ DateTime.Now } Error:{ Message }";
-            LogChangedHandlers.ForEach(H => H.Invoke(this, new EventArgs()));
+            LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
-        public void OnLogChange(EventHandler Handler) => LogChangedHandlers.Add(Handler);   
+        public void OnLogChange(EventHandler Handler) => LogChangedHandlers += Handler;   
 
-        public void RemoveOnLogChange(EventHandler Handler) => LogChangedHandlers.Remove(Handler);
+        public void RemoveOnLogChange(EventHandler Handler) => LogChangedHandlers -= Handler;
 
         public string GetLog() => CurrentLog;
     }

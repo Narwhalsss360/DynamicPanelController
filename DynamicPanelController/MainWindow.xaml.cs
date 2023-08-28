@@ -19,11 +19,21 @@ namespace DynamicPanelController
             Loaded += WindowLoaded;
             Log = App;
             Log.OnLogChange(ApplicationLogChanged);
+            App.CommunicationsStarted += SwapToggleConnectionButtonText;
+            App.CommunicationsStopped += SwapToggleConnectionButtonText;
         }
 
         void WindowLoaded(object Sender, EventArgs Args)
         {
             LogBox.Text = Log.GetLog();
+        }
+
+        private void SwapToggleConnectionButtonText(object? Sender = null, EventArgs? Args = null)
+        {
+            if (App.Communicating)
+                PortConnectionToggle.Content = "Disconnect";
+            else
+                PortConnectionToggle.Content = "Disconnect";
         }
 
         private void ToggleConnection(object Sender, EventArgs Args)
@@ -32,13 +42,14 @@ namespace DynamicPanelController
             {
                 PortSelection.IsEnabled = true;
                 App.StopPortCommunication();
-                PortConnectionToggle.Content = "Connect";
+                SwapToggleConnectionButtonText();
             }
             else
             {
-                PortConnectionToggle.Content = "Disconnect";
                 PortSelection.IsEnabled = false;
                 App.StartPortCommunication();
+                PortConnectionToggle.Content = "Disconnect";
+                SwapToggleConnectionButtonText();
             }
         }
 

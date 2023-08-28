@@ -10,13 +10,13 @@ namespace Profiling.ProfilingTypes
         }
     }
 
-    public interface AbsolutePanelAction : PanelAction
+    public interface IAbsolutePanelAction : IPanelAction
     {
         object? Set(object? Value);
     }
 
     public static class AbsolutePanelActionExtensions
     {
-        public static AbsolutePanelActionDescriptorAttribute? GetDescriptorAttribute(this AbsolutePanelAction Action) => Action.GetType().GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
+        public static AbsolutePanelActionDescriptorAttribute? GetDescriptorAttribute(this IAbsolutePanelAction Action) => Action.GetType().GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
     }
 }

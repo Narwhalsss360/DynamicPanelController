@@ -4,7 +4,7 @@ using PanelExtension;
 namespace IncludedExtensions.Tests
 {
     [PanelActionDescriptor("Log Test")]
-    public class LogTest : PanelAction
+    public class LogTest : IPanelAction
     {
         public object? Do()
         {

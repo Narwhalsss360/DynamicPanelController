@@ -9,8 +9,8 @@ namespace Profiling
     {
         public string Name { get; set; } = string.Empty;
         public PanelDescriptor? PanelDescription { get; set; } = null;
-        public Dictionary<byte, Tuple<ButtonUpdateStates, PanelAction>> ActionMappings { get; set; } = new();
-        public Dictionary<byte, AbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
+        public Dictionary<byte, Tuple<ButtonUpdateStates, IPanelAction>> ActionMappings { get; set; } = new();
+        public Dictionary<byte, IAbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
         public Dictionary<byte, IPanelSource> SourceMappings { get; set; } = new();
 
         public PanelProfile()
@@ -30,8 +30,8 @@ namespace Profiling
                     Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value[1]);
                     if (ExtensionType is null)
                         continue;
-                    PanelAction? Instance = Activator.CreateInstance(ExtensionType) as PanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    ActionMappings.Add(IDAction.Key, new Tuple<ButtonUpdateStates, PanelAction>(IDAction.Value[0].ToButtonUpdateState(), Instance));
+                    IPanelAction? Instance = Activator.CreateInstance(ExtensionType) as IPanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
+                    ActionMappings.Add(IDAction.Key, new Tuple<ButtonUpdateStates, IPanelAction>(IDAction.Value[0].ToButtonUpdateState(), Instance));
                 }
             }
             if (Serialized.AbsoluteActionMappings is not null)
@@ -41,7 +41,7 @@ namespace Profiling
                     Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value);
                     if (ExtensionType is null)
                         continue;
-                    AbsolutePanelAction? Instance = Activator.CreateInstance(ExtensionType) as AbsolutePanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
+                    IAbsolutePanelAction? Instance = Activator.CreateInstance(ExtensionType) as IAbsolutePanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
                     AbsoluteActionMappings.Add(IDAction.Key, Instance);
                 }
             }
