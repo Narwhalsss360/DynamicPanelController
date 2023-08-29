@@ -25,10 +25,5 @@ namespace IncludedExtensions.Volume
                 Volume.Controller.DefaultPlaybackDevice.Volume = (double)CastedValue;
             return null;
         }
-
-        public object? Do()
-        {
-            return null;
-        }
     }
 }

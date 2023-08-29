@@ -10,7 +10,7 @@ namespace Profiling.ProfilingTypes
         public PanelSourceDescriptorAttribute(string Name) => this.Name = Name;
     }
 
-    public interface IPanelSource
+    public interface IPanelSource : IPanelItem
     {
         object? GetSourceValue();
     }

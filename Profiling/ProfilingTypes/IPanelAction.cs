@@ -9,9 +9,9 @@ namespace Profiling.ProfilingTypes
         public PanelActionDescriptorAttribute(string Name) => this.Name = Name;
     }
 
-    public interface IPanelAction
+    public interface IPanelAction : IPanelItem
     {
-        object? Do();
+        object? Do() => null;
     }
 
     public static class PanelActionExtensions
