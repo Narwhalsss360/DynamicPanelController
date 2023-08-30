@@ -6,6 +6,6 @@ namespace IncludedExtensions.Volume
 {
     internal static class Volume
     {
-        public static CoreAudioController Controller = new CoreAudioController();
+        public static CoreAudioController Controller = new();
     }
 }

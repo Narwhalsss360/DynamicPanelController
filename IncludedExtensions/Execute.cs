@@ -13,7 +13,7 @@ namespace IncludedExtensions
 
         public string?[]?[]? ValidOptions() => new string?[]?[] { new string?[] { "Path", null } };
 
-        public bool IsValidProgramPath(string? ProgramPath)
+        public static bool IsValidProgramPath(string? ProgramPath)
         {
             if (ProgramPath is null)
                 return false;
