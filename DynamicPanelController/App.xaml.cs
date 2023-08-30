@@ -14,6 +14,7 @@ using System.Text.Json;
 using Panel.Communication;
 using System.ComponentModel;
 using System.Linq;
+using Panel;
 
 namespace DynamicPanelController
 {
@@ -53,6 +54,10 @@ namespace DynamicPanelController
         public event EventHandler? LogChangedHandlers;
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
+
+        PanelDescriptor? GlobalPanelDescriptor = null;
+        Dictionary<string, string> GlobalSettings = new();
+        Dictionary<string, string> GlobalSettingsValidOptions = new();
 
         App()
         {
