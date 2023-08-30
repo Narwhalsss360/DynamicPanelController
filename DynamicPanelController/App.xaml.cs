@@ -54,7 +54,6 @@ namespace DynamicPanelController
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
 
-
         App()
         {
             Startup += ApplicationStarting;

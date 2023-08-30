@@ -5,7 +5,7 @@ namespace IncludedExtensions.Volume
     [PanelActionDescriptor("Decrease Volume")]
     public class Decrease : IPanelAction
     {
-        public object? Do()
+        public object? Do(object? Arguments = null)
         {
             Volume.Controller.DefaultPlaybackDevice.Volume--;
             return null;

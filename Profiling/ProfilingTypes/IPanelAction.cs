@@ -11,7 +11,7 @@ namespace Profiling.ProfilingTypes
 
     public interface IPanelAction : IPanelItem
     {
-        object? Do() => null;
+        object? Do(object? Arguments = null) => null;
     }
 
     public static class PanelActionExtensions

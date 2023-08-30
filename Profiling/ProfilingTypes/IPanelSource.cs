@@ -12,7 +12,7 @@ namespace Profiling.ProfilingTypes
 
     public interface IPanelSource : IPanelItem
     {
-        object? GetSourceValue();
+        object? GetSourceValue(object? Arguments = null);
     }
 
     public static class PanelSourceExtensions
