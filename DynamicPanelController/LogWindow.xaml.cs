@@ -6,12 +6,12 @@ using System.Windows;
 
 namespace DynamicPanelController
 {
-    public partial class MainWindow : Window
+    public partial class LogWindow : Window
     {
-        App App = Application.Current as App;
-        ILogger Log;
+        private readonly App App = Application.Current as App;
+        readonly ILogger Log;
 
-        public MainWindow()
+        public LogWindow()
         {
             if (App is null)
                 throw new Exception("Couldn't get current app.");

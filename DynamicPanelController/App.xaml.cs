@@ -27,9 +27,9 @@ namespace DynamicPanelController
         public List<Type> Sources = new();
 
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
-        Thread SendSourceMappingsThread;
+        readonly Thread SendSourceMappingsThread;
         bool SuspendSendThread = false;
-        PacketCollector Collector = new();
+        readonly PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
         public bool Communicating { get; private set; } = false;
@@ -162,12 +162,10 @@ namespace DynamicPanelController
             {
                 if (Profile.Extension != ".json")
                     continue;
-                using (var ProfileStream = Profile.Open(FileMode.Open))
-                {
-                    byte[] FileBytes = new byte[ProfileStream.Length];
-                    ProfileStream.Read(FileBytes, 0, FileBytes.Length);
-                    LoadProfile(FileBytes);
-                }
+                using var ProfileStream = Profile.Open(FileMode.Open);
+                byte[] FileBytes = new byte[ProfileStream.Length];
+                ProfileStream.Read(FileBytes, 0, FileBytes.Length);
+                LoadProfile(FileBytes);
             }
         }
 
@@ -176,12 +174,10 @@ namespace DynamicPanelController
             if (!File.Exists(Settings.FilePath))
                 return;
 
-            using (var SettingsFile = new StreamReader(Settings.FilePath))
-            {
-                AppSettings? Deserialized = JsonSerializer.Deserialize<AppSettings>(SettingsFile.ReadToEnd());
-                if (Deserialized is not null)
-                    Settings = (AppSettings)Deserialized;
-            }
+            using var SettingsFile = new StreamReader(Settings.FilePath);
+            AppSettings? Deserialized = JsonSerializer.Deserialize<AppSettings>(SettingsFile.ReadToEnd());
+            if (Deserialized is not null)
+                Settings = (AppSettings)Deserialized;
         }
 
         public void RefreshPanelExtensionProperties()
@@ -293,16 +289,15 @@ namespace DynamicPanelController
 
         void PortDataReceived(object Sender, SerialDataReceivedEventArgs Args)
         {
-            SerialPort? Port = Sender as SerialPort;
-            if (Port is null)
+            if (Sender is not SerialPort Port)
                 return;
             Collector.Collect(Encoding.UTF8.GetBytes(Port.ReadExisting()));
         }
 
         public void SaveSettings()
         {
-            using (var SettingsFile = new StreamWriter($"{ Environment.CurrentDirectory }\\Settings.json"))
-                SettingsFile.Write(JsonSerializer.Serialize(Settings, options: new JsonSerializerOptions() { WriteIndented = true }));
+            using var SettingsFile = new StreamWriter($"{Environment.CurrentDirectory}\\Settings.json");
+            SettingsFile.Write(JsonSerializer.Serialize(Settings, options: new JsonSerializerOptions() { WriteIndented = true }));
         }
 
         public void SaveProfiles()
@@ -319,8 +314,8 @@ namespace DynamicPanelController
             List<EventHandler>? Handlers = GetProperty<Extension, List<EventHandler>>("ExitingHandlers");
             Handlers?.ForEach(Handler => Handler.Invoke(this, new EventArgs()));
             Info("Program exiting");
-            using (var LogStream = new StreamWriter(Settings.LogPath, true))
-                LogStream.Write(CurrentLog);
+            using var LogStream = new StreamWriter(Settings.LogPath, true);
+            LogStream.Write(CurrentLog);
         }
 
         static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null) => typeof(ClassType).GetProperty(PropertyName)?.SetValue(Instance, Value);
