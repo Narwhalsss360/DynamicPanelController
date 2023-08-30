@@ -8,7 +8,7 @@ namespace DynamicPanelController
 {
     public partial class LogWindow : Window
     {
-        private readonly App App = Application.Current as App;
+        private readonly App App = (App)Application.Current;
         readonly ILogger Log;
 
         public LogWindow()

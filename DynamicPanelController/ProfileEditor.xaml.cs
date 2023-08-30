@@ -6,7 +6,7 @@ namespace DynamicPanelController
 {
     public partial class ProfileEditor : Window
     {
-        readonly App App = Application.Current as App;
+        readonly App App = (App)Application.Current;
         readonly int SelectedIndexToEdit = -1;
         PanelProfile EditiedVersion;
 
