@@ -27,6 +27,7 @@ namespace IncludedExtensions
                 return "Must specify a program path.";
             if (!IsValidProgramPath(Options["Path"]))
                 return "Invalid Path.";
+            ProgramPath = Options["Path"];
             return null;
         }
 

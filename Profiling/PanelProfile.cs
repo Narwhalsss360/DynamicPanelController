@@ -12,6 +12,9 @@ namespace Profiling
         public Dictionary<byte, Tuple<ButtonUpdateStates, IPanelAction>> ActionMappings { get; set; } = new();
         public Dictionary<byte, IAbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
         public Dictionary<byte, IPanelSource> SourceMappings { get; set; } = new();
+        public Dictionary<string, string[]?> ActionMappingsOptions = new();
+        public Dictionary<string, string[]?> AbsoluteActionMappingsOptions = new();
+        public Dictionary<string, string[]?> SourceMappingsOptions = new();
 
         public PanelProfile()
         {
@@ -66,6 +69,10 @@ namespace Profiling
             public Dictionary<byte, string[]>? ActionMappings { get; set; } = null;
             public Dictionary<byte, string>? AbsoluteActionMappings { get; set; } = null;
             public Dictionary<byte, string>? SourceMappings { get; set; } = null;
+            public PanelDescriptor.Serializable? PanelDescriptor { get; set; } = null;
+            public Dictionary<string, string[]?>? ActionMappingsOptions { get; set; } = null;
+            public Dictionary<string, string[]?>? AbsoluteActionMappingsOptions { get; set; } = null;
+            public Dictionary<string, string[]?>? SourceMappingsOptions { get; set; } = null;
 
             public Serializable()
             {

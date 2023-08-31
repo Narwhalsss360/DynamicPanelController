@@ -37,27 +37,40 @@ namespace DynamicPanelController
 
         public struct AppSettings
         {
-            public readonly string FilePath = $"";
+            public string FilePath = $"";
             public string ExtensionsDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Extensions";
             public string ProfilesDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Profiles";
             public string LogPath {   get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
+            public PanelDescriptor? GlobalPanelDescriptor = null;
+            public Dictionary<string, string> GlobalSettings = new();
+            public Dictionary<string, string> GlobalSettingsValidOptions = new();
+
+            class Serializable
+            {
+                public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
+                public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
+                public string LogPath { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
+                public PanelDescriptor.Serializable? GlobalPanelDescriptor { set; get; } = null;
+                public Dictionary<string, string>? GlobalSettings { set; get; } = new();
+                public Dictionary<string, string>? GlobalSettingsValidOptions { set; get; } = new();
+
+                public Serializable()
+                {
+                }
+            }
 
             public AppSettings()
             {
             }
         }
 
-        AppSettings Settings = new();
+        public AppSettings Settings = new();
 
         public string CurrentLog { get; private set; } = string.Empty;
 
         public event EventHandler? LogChangedHandlers;
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
-
-        PanelDescriptor? GlobalPanelDescriptor = null;
-        Dictionary<string, string> GlobalSettings = new();
-        Dictionary<string, string> GlobalSettingsValidOptions = new();
 
         App()
         {
@@ -70,12 +83,12 @@ namespace DynamicPanelController
 
         void ApplicationStarting(object Sender, EventArgs Args)
         {
+            Info("Program starting");
             LoadSettings();
             SetProperty<Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
             SetProperty<Extension>("Refresher", (Refresher)RefreshPanelExtensionProperties);
             LoadExtensionsFromDirectory();
             LoadProfiles();
-            Info("Program starting");
         }
 
         void LoadExtensionsFromDirectory()
@@ -177,7 +190,10 @@ namespace DynamicPanelController
         public void LoadSettings()
         {
             if (!File.Exists(Settings.FilePath))
+            {
+                Error($"Could not find settings file @ { Settings.FilePath }");
                 return;
+            }
 
             using var SettingsFile = new StreamReader(Settings.FilePath);
             AppSettings? Deserialized = JsonSerializer.Deserialize<AppSettings>(SettingsFile.ReadToEnd());

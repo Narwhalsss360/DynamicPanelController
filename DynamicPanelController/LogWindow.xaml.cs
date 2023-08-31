@@ -1,5 +1,6 @@
 ﻿using PanelExtension;
 using System;
+using System.DirectoryServices;
 using System.IO.Ports;
 using System.Linq;
 using System.Windows;
@@ -10,6 +11,7 @@ namespace DynamicPanelController
     {
         private readonly App App = (App)Application.Current;
         readonly ILogger Log;
+        ProfileEditor? EditorWindow = null;
 
         public LogWindow()
         {
@@ -89,6 +91,22 @@ namespace DynamicPanelController
             if (ProfileSelection.SelectedIndex == -1)
                 return;
             EditProfile.IsEnabled = true;
+        }
+
+        private void EditButtonClicked(object? Sender, EventArgs Args)
+        {
+            if (EditorWindow is not null)
+                return;
+
+            EditorWindow = new ProfileEditor(App.SelectedProfileIndex);
+            EditorWindow.Closed += EditorWindowClosed;
+            EditorWindow.Show();
+        }
+
+        private void EditorWindowClosed(object? Sender, EventArgs Args)
+        {
+            if (EditorWindow is not null)
+                App.Profiles[App.SelectedProfileIndex] = EditorWindow.EditiedVersion;
         }
 
         private void ApplicationLogChanged(object? Sender, EventArgs Args) => LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
