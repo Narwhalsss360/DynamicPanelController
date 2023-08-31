@@ -39,7 +39,11 @@ namespace DynamicPanelController
             }
         }
 
-        void CancelClicked(object? Sender, EventArgs Args) => Close();
+        void CancelClicked(object? Sender, EventArgs Args)
+        {
+            Validated = false;
+            Close();
+        }
 
         void ApplyClicked(object? Sender, EventArgs Args)
         {
