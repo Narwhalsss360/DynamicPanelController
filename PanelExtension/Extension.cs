@@ -36,7 +36,7 @@ namespace PanelExtension
 
         public static void RemoveExitHandler(EventHandler Handler)
         {
-            while(ExitingHandlers.Contains(Handler))
+            while (ExitingHandlers.Contains(Handler))
                 ExitingHandlers.Remove(Handler);
         }
 

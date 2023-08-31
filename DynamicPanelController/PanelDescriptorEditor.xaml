@@ -52,9 +52,10 @@
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            
-            <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5"/>
-            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5"/>
+
+            <Button x:Name="GlobalButton" Content="Set Global" Margin="5" IsEnabled="False" Click="GlobalClicked"/>
+            <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5" Click="CancelClicked"/>
+            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5" Click="ApplyClicked"/>
         </Grid>
     </Grid>
 </Window>

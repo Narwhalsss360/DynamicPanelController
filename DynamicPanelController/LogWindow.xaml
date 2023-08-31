@@ -18,9 +18,9 @@
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="EditProfile" Width="50" Content="Edit" Margin="5" IsEnabled="False"/>
+            <Button x:Name="EditProfile" Width="50" Content="Edit" Margin="5" IsEnabled="False" Click="EditButtonClicked"/>
             <ComboBox x:Name="ProfileSelection" DropDownOpened="ProfileSelectionOpened" DropDownClosed="ProfileSelectionClosed"  Width="160" HorizontalAlignment="Right" Margin="5" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-            <Button x:Name="EditSettings" Content="Settings" Width="60" Margin="5"/>
+            <Button x:Name="EditSettings" Content="Settings" Width="60" Margin="5" Click="SettingsButtonClicked"/>
         </StackPanel>
 
         <TextBox x:Name="LogBox" TextChanged="LogBoxTextChanged" Grid.Row="1" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="5" />

@@ -17,6 +17,7 @@ namespace DynamicPanelController
         public PanelProfile EditiedVersion;
         PanelDescriptorEditor? CustomDescriptorEditor = null;
         bool PushedButtonSet = false;
+        bool IgnoreNextItemSelection = false;
 
         public ProfileEditor(int SelectedIndex)
         {
@@ -31,6 +32,7 @@ namespace DynamicPanelController
 
             SelectedIndexToEdit = SelectedIndex;
             EditiedVersion = App.Profiles[SelectedIndexToEdit];
+            PanelProfileNameTextBlock.Text = EditiedVersion.Name;
         }
 
         public void LoadDescriptor(PanelDescriptor? Descriptor)
@@ -48,7 +50,7 @@ namespace DynamicPanelController
             for (int i = 0; i < DescriptorToLoad.AbsoluteCount; i++)
                 IOSelectorList.Items.Add($"Absolute {i}");
 
-            for (int i = 0; i < DescriptorToLoad.AbsoluteCount; i++)
+            for (int i = 0; i < DescriptorToLoad.DisplayCount; i++)
                 IOSelectorList.Items.Add($"Display {i}");
         }
 
@@ -70,15 +72,23 @@ namespace DynamicPanelController
             }
 
             if (IOSelectorList.SelectedIndex < EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount || Selection.StartsWith("Button") || Selection.StartsWith("Absolute"))
+            {
                 foreach (var ActionType in App.Actions)
                     PanelItemSelectorList.Items.Add(ActionType.GetPanelActionDescriptor()?.Name);
+            }
             else if (IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount || Selection.StartsWith("Display"))
+            {
                 foreach (var SourceType in App.Sources)
                     PanelItemSelectorList.Items.Add(SourceType.GetPanelSourceDescriptor()?.Name);
+            }
         }
 
         public void PanelItemSelected(object? Sender, EventArgs Args)
         {
+            if (IgnoreNextItemSelection)
+                return;
+            if (PanelItemSelectorList.SelectedIndex == -1)
+                return;
             OptionsSelectorList?.Items.Clear();
             Type? ItemType;
             if (PanelItemSelectorList.SelectedIndex < App.Actions.Count)
@@ -123,10 +133,10 @@ namespace DynamicPanelController
 
         void PanelDescriptorButtonClicked(object? Sender, EventArgs Args)
         {
-            if (CustomDescriptorEditor is null)
+            if (CustomDescriptorEditor is not null)
                 return;
 
-            CustomDescriptorEditor = new PanelDescriptorEditor(EditiedVersion.PanelDescription);
+            CustomDescriptorEditor = new PanelDescriptorEditor(EditiedVersion.PanelDescription, true);
             CustomDescriptorEditor.Show();
             CustomDescriptorEditor.Closed += PanelDescriptorEditorClosed;
         }
@@ -134,8 +144,8 @@ namespace DynamicPanelController
         void PanelDescriptorEditorClosed(object? Sender, EventArgs Args)
         {
             EditiedVersion.PanelDescription = CustomDescriptorEditor?.Descriptor;
-            CustomDescriptorEditor = null;
             LoadDescriptor(EditiedVersion.PanelDescription);
+            CustomDescriptorEditor = null;
         }
 
         void PushedButtonPushed(object? Sender, EventArgs Args) => PushedButtonSet = true;

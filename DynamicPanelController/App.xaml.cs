@@ -42,7 +42,7 @@ namespace DynamicPanelController
             public string ProfilesDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Profiles";
             public string LogPath {   get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
             public PanelDescriptor? GlobalPanelDescriptor = null;
-            public Dictionary<string, string> GlobalSettings = new();
+            public Dictionary<string, string> GlobalSettings = new() { { "My Key", "My Value" }, { "My Key 2", "My Value 2" } };
             public Dictionary<string, string> GlobalSettingsValidOptions = new();
 
             class Serializable
@@ -164,7 +164,8 @@ namespace DynamicPanelController
                     }
                 }
             }
-            Info($"Loaded { ExtensionsLoaded } from { AssemblyToLoad.FullName }");
+            if (ExtensionsLoaded > 0)
+                Info($"Loaded { ExtensionsLoaded } from { AssemblyToLoad.FullName }");
             return ExtensionsLoaded;
         }
 

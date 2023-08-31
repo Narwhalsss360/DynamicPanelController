@@ -12,6 +12,7 @@ namespace DynamicPanelController
         private readonly App App = (App)Application.Current;
         readonly ILogger Log;
         ProfileEditor? EditorWindow = null;
+        SettingsWindow? SettingsWindow { get; set; } = null;
 
         public LogWindow()
         {
@@ -107,6 +108,23 @@ namespace DynamicPanelController
         {
             if (EditorWindow is not null)
                 App.Profiles[App.SelectedProfileIndex] = EditorWindow.EditiedVersion;
+        }
+
+        private void SettingsButtonClicked(object? Sender, EventArgs Args)
+        {
+            if (SettingsWindow is not null)
+                return;
+            SettingsWindow = new SettingsWindow(App.Settings) ;
+            SettingsWindow.Closed += SettingsWindowClosed;
+            SettingsWindow.Show();
+        }
+
+        private void SettingsWindowClosed(object? Sender, EventArgs Args)
+        {
+            if (SettingsWindow is null)
+                return;
+            if (SettingsWindow.Validated)
+                App.Settings = SettingsWindow.EditedSettings;
         }
 
         private void ApplicationLogChanged(object? Sender, EventArgs Args) => LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
