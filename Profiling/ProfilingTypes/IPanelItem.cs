@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-
 namespace Profiling.ProfilingTypes
 {
     public interface IPanelItem

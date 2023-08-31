@@ -1,6 +1,4 @@
-﻿using AudioSwitcher.AudioApi;
-using AudioSwitcher.AudioApi.CoreAudio;
-using System.Runtime.CompilerServices;
+﻿using AudioSwitcher.AudioApi.CoreAudio;
 
 namespace IncludedExtensions.Volume
 {

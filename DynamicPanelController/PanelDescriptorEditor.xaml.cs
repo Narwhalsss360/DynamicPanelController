@@ -51,6 +51,8 @@ namespace DynamicPanelController
                     DisplayDescriptorContentGrid NewContent = new(Elements);
                     (NewContent.Elements[1] as ComboBox).SelectionChanged += (Sender, Args) => { NewContent.CallEvent((object)DisplayDescriptorTypeChanged, null, Args); };
                     NewContent.AddKeyedEvent((object)DisplayDescriptorTypeChanged, DisplayDescriptorTypeChanged);
+                    (NewContent.Elements[3] as TextBox).TextChanged += (Sender, Args) => { NewContent.CallEvent((object)EntryTextChanged, null, Args); };
+                    NewContent.AddKeyedEvent((object)EntryTextChanged, EntryTextChanged);
                     Default.Add(NewContent);
                 }
                 UIDisplayDescriptors.AddRange(Default);
@@ -81,7 +83,7 @@ namespace DynamicPanelController
             if (ThisDescriptor.Elements?[2] is not ComboBox TypeCombo)
                 return;
 
-
+            (ThisDescriptor.Elements[3] as TextBox).Text = "";
         }
 
         public void EntryTextChanged(object? Sender, EventArgs Args)
@@ -90,10 +92,16 @@ namespace DynamicPanelController
             if (ThisDescriptor is null)
                 return;
 
-            if (ThisDescriptor.Context is not byte Digits)
-                return;
-
-            
+            if (ThisDescriptor.Context is byte)
+            {
+                if (byte.TryParse((ThisDescriptor.Elements[3] as TextBox).Text, out byte Out))
+                    ThisDescriptor.Context = Out;
+            }
+            else if (ThisDescriptor.Context is byte[])
+            {
+                if (byte.TryParse((ThisDescriptor.Elements[3] as TextBox).Text, out byte Out))
+                    (ThisDescriptor.Context as byte[])[(ThisDescriptor.Elements[1] as ComboBox).SelectedIndex] = Out;
+            }
         }
 
         void DisplayDescriptorTypeChanged(object? Sender, EventArgs Args)
@@ -111,19 +119,19 @@ namespace DynamicPanelController
                     ThisDescriptor.Elements[2] = new ComboBox() { ItemsSource = new string[] { "Rows", "Columns" }, Margin = new Thickness() { Left = 5, Right = 5 } };
                     (ThisDescriptor.Elements[2] as ComboBox).SelectionChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)RowColumnSelected, null, Args); };
                     ThisDescriptor.AddKeyedEvent((object)RowColumnSelected, RowColumnSelected);
-                    if (ThisDescriptor.CustomEvents.ContainsKey((object)EntryTextChanged))
-                        ThisDescriptor.CustomEvents.Remove((object)EntryTextChanged);
+                    ThisDescriptor.Context = new byte[2];
                     break;
                 case DisplayTypes.SevenSegment:
                     ThisDescriptor.Elements[2] = new TextBlock() { Text = "Digits:", Margin = new Thickness() { Left = 5, Right = 5 } };
                     (ThisDescriptor.Elements[3] as TextBox).TextChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)EntryTextChanged, null, Args); };
                     if (ThisDescriptor.CustomEvents.ContainsKey((object)RowColumnSelected))
                         ThisDescriptor.CustomEvents.Remove((object)RowColumnSelected);
-                    ThisDescriptor.AddKeyedEvent((object)EntryTextChanged, EntryTextChanged);
+                    ThisDescriptor.Context = new byte();
                     break;
                 default:
                     break;
             }
+            (ThisDescriptor.Elements[3] as TextBox).Text = "";
             ThisDescriptor.Update();
         }
 
@@ -141,6 +149,27 @@ namespace DynamicPanelController
             Descriptor.ButtonCount = ButtonCount;
             Descriptor.AbsoluteCount = AbsoluteCount;
             Descriptor.DisplayCount = DisplayCount;
+
+            Descriptor.DisplayTypes = new DisplayTypes[DisplayCount];
+            Descriptor.DisplayDescriptor = new byte[DisplayCount][];
+            for (int i = 0; i < UIDisplayDescriptors.Count; i++)
+            {
+                DisplayTypes DisplayType = (UIDisplayDescriptors[i].Elements[1] as ComboBox).SelectedIndex == (int)DisplayTypes.RowColumn ? DisplayTypes.RowColumn : DisplayTypes.SevenSegment;
+                Descriptor.DisplayTypes[i] = DisplayType;
+                if (DisplayType == DisplayTypes.RowColumn)
+                {
+                    Descriptor.DisplayDescriptor[i] = new byte[2];
+                    if (UIDisplayDescriptors[i].Context is byte[] RowsColumns)
+                        Descriptor.DisplayDescriptor[i] = RowsColumns;
+                }
+                else
+                {
+                    Descriptor.DisplayDescriptor[i] = new byte[1];
+                    if (UIDisplayDescriptors[i].Context is byte Digits)
+                        Descriptor.DisplayDescriptor[i][0] = Digits;
+                }
+
+            }
 
             return null;
         }

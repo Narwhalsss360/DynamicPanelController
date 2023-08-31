@@ -12,7 +12,6 @@ using System.Text;
 using NStreamCom;
 using System.Text.Json;
 using Panel.Communication;
-using System.ComponentModel;
 using System.Linq;
 using Panel;
 
@@ -42,7 +41,7 @@ namespace DynamicPanelController
             public string ProfilesDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Profiles";
             public string LogPath {   get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
             public PanelDescriptor? GlobalPanelDescriptor = null;
-            public Dictionary<string, string> GlobalSettings = new() { { "My Key", "My Value" }, { "My Key 2", "My Value 2" } };
+            public Dictionary<string, string> GlobalSettings = new();
             public Dictionary<string, string> GlobalSettingsValidOptions = new();
 
             class Serializable

@@ -86,8 +86,8 @@
             </Grid.ColumnDefinitions>
 
             <Button x:Name="OKButton" Content="OK" Margin="5" Click="OKClicked"/>
-            <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5"/>
-            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5"/>
+            <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5" Click="CancelClicked"/>
+            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5" Click="ApplyClicked"/>
         </Grid>
     </Grid>
 </Window>
