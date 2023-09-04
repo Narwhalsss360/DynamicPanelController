@@ -78,14 +78,14 @@ namespace DynamicPanelController
             App.Port.PortName = PortSelection.Text;
         }
 
-        private void ProfileSelectionOpened(object Sender, EventArgs Args)
+        private void ProfileSelectionOpened(object? Sender, EventArgs Args)
         {
             ProfileSelection.Items.Clear();
             foreach (var Profile in App.Profiles)
                 ProfileSelection.Items.Add(Profile.Name);
         }
 
-        private void ProfileSelectionClosed(object Sender, EventArgs Args)
+        private void ProfileSelectionClosed(object? Sender, EventArgs Args)
         {
             App.SelectedProfileIndex = ProfileSelection.SelectedIndex;
             EditProfile.IsEnabled = false;
@@ -108,13 +108,15 @@ namespace DynamicPanelController
         {
             if (EditorWindow is not null)
                 App.Profiles[App.SelectedProfileIndex] = EditorWindow.EditiedVersion;
+            EditorWindow = null;
+            ProfileSelectionOpened(Sender, Args);
         }
 
         private void SettingsButtonClicked(object? Sender, EventArgs Args)
         {
             if (SettingsWindow is not null)
                 return;
-            SettingsWindow = new SettingsWindow(App.Settings) ;
+            SettingsWindow = new SettingsWindow(App.Settings);
             SettingsWindow.Closed += SettingsWindowClosed;
             SettingsWindow.Show();
         }

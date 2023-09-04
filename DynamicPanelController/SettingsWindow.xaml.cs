@@ -25,7 +25,7 @@ namespace DynamicPanelController
         {
             EditedSettings.ExtensionsDirectory = ExtensionsDirectoryEntry.Text;
             EditedSettings.ProfilesDirectory = ProfilesDirectoryEntry.Text;
-            EditedSettings.LogPath = LogDirectoryEntry.Text;
+            EditedSettings.LogDirectory = LogDirectoryEntry.Text;
             Validated = true;
             return null;
         }
@@ -97,6 +97,11 @@ namespace DynamicPanelController
 
         private void WindowLoaded(object? Sender, EventArgs Args)
         {
+            ExtensionsDirectoryEntry.Text = EditedSettings.ExtensionsDirectory;
+            ProfilesDirectoryEntry.Text = EditedSettings.ProfilesDirectory;
+            LogDirectoryEntry.Text = EditedSettings.LogDirectory;
+            foreach (var KVP in EditedSettings.GlobalSettings)
+                Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = KVP.Key, ThisValue = KVP.Value });
             GlobalOptionsPanel.ItemsSource = Options;
         }
     }

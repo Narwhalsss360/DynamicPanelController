@@ -16,7 +16,6 @@ namespace DynamicPanelController
     public partial class ProfileEditor : Window
     {
         readonly App App = (App)Application.Current;
-        readonly int SelectedIndexToEdit = -1;
         public PanelProfile EditiedVersion;
         PanelDescriptorEditor? CustomDescriptorEditor = null;
         bool PushedButtonSet = true;
@@ -35,9 +34,21 @@ namespace DynamicPanelController
                 Close();
             }
 
-            SelectedIndexToEdit = SelectedIndex;
-            EditiedVersion = App.Profiles[SelectedIndexToEdit];
+            Loaded += WindowLoaded;
+
+            EditiedVersion = App.Profiles[SelectedIndex];
             PanelProfileNameTextBlock.Text = EditiedVersion.Name;
+        }
+
+        private void WindowLoaded(object sender, RoutedEventArgs e)
+        {
+            if (EditiedVersion.PanelDescriptor is null)
+                LoadDescriptor(App.Settings.GlobalPanelDescriptor);
+            else
+            {
+                PanelDescriptorButton.Content = "Panel Descriptor: Custom";
+                LoadDescriptor(EditiedVersion.PanelDescriptor);
+            }
         }
 
         public void LoadDescriptor(PanelDescriptor? Descriptor)
@@ -47,7 +58,9 @@ namespace DynamicPanelController
             if (DescriptorToLoad is null)
                 return;
 
-            EditiedVersion.PanelDescription = DescriptorToLoad;
+            IOSelectorList.Items.Clear();
+
+            EditiedVersion.PanelDescriptor = DescriptorToLoad;
 
             for (int i = 0; i < DescriptorToLoad.ButtonCount; i++)
                 IOSelectorList.Items.Add($"Button {i}");
@@ -67,8 +80,8 @@ namespace DynamicPanelController
             if (IOSelectorList.SelectedItem is not string Selection)
                 return;
 
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescription?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount;
+            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
             byte? ID;
@@ -76,9 +89,9 @@ namespace DynamicPanelController
             if (IsButton)
                 ID = (byte?)IOSelectorList.SelectedIndex;
             else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount));
+                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
             else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescription?.ButtonCount);
+                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
 
             if (IsButton || IsAbsolute)
             {
@@ -163,27 +176,28 @@ namespace DynamicPanelController
             if (PanelItemSelectorList.SelectedIndex == -1)
                 return;
 
+
+            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
+            bool IsAbsolute = !IsButton && !IsSource;
+
             Type? ItemType;
-            if (PanelItemSelectorList.SelectedIndex < App.Actions.Count)
+            if (IsButton || IsAbsolute)
                 ItemType = App.Actions[PanelItemSelectorList.SelectedIndex];
             else
-                ItemType = App.Sources[PanelItemSelectorList.SelectedIndex - App.Actions.Count];
+                ItemType = App.Sources[PanelItemSelectorList.SelectedIndex];
 
             if (ItemType is null)
                 return;
-
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescription?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount;
-            bool IsAbsolute = !IsButton && !IsSource;
 
             byte? ID;
 
             if (IsButton)
                 ID = (byte?)IOSelectorList.SelectedIndex;
             else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount));
+                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
             else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescription?.ButtonCount);
+                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
 
             if (ID is null)
                 return;
@@ -261,8 +275,8 @@ namespace DynamicPanelController
                 }
             }
 
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescription?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount;
+            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
             byte? ID;
@@ -270,9 +284,9 @@ namespace DynamicPanelController
             if (IsButton)
                 ID = (byte?)IOSelectorList.SelectedIndex;
             else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescription?.ButtonCount + EditiedVersion.PanelDescription?.AbsoluteCount));
+                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
             else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescription?.ButtonCount);
+                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
 
             if (ID is null)
                 return;
@@ -406,7 +420,7 @@ namespace DynamicPanelController
 
         void EditorLoaded(object? Sender, EventArgs Args)
         {
-            LoadDescriptor(App.Profiles[SelectedIndexToEdit].PanelDescription);
+            LoadDescriptor(EditiedVersion.PanelDescriptor);
         }
 
         void AddOptionButtonClicked(object? Sender, EventArgs Args)
@@ -430,15 +444,26 @@ namespace DynamicPanelController
             if (CustomDescriptorEditor is not null)
                 return;
 
-            CustomDescriptorEditor = new PanelDescriptorEditor(EditiedVersion.PanelDescription, true);
+            CustomDescriptorEditor = new PanelDescriptorEditor(EditiedVersion.PanelDescriptor, true);
             CustomDescriptorEditor.Show();
             CustomDescriptorEditor.Closed += PanelDescriptorEditorClosed;
         }
 
         void PanelDescriptorEditorClosed(object? Sender, EventArgs Args)
         {
-            EditiedVersion.PanelDescription = CustomDescriptorEditor?.Descriptor;
-            LoadDescriptor(EditiedVersion.PanelDescription);
+            if (CustomDescriptorEditor is null)
+                return;
+            if (CustomDescriptorEditor.Descriptor is null)
+            {
+                PanelDescriptorButton.Content = "Panel Descriptor: Global";
+                LoadDescriptor(App.Settings.GlobalPanelDescriptor);
+            }
+            else
+            {
+                PanelDescriptorButton.Content = "Panel Descriptor: Custom";
+                LoadDescriptor(EditiedVersion.PanelDescriptor);
+            }
+            EditiedVersion.PanelDescriptor = CustomDescriptorEditor.Descriptor;
             CustomDescriptorEditor = null;
         }
 
@@ -460,7 +485,7 @@ namespace DynamicPanelController
 
         void OKClicked(object? Sender, EventArgs Args)
         {
-            App.Profiles[SelectedIndexToEdit] = EditiedVersion;
+            EditiedVersion.Name = PanelProfileNameTextBlock.Text;
         }
 
         void CancelClicked(object? Sender, EventArgs Args)

@@ -8,13 +8,12 @@ namespace Profiling
     public class PanelProfile
     {
         public string Name { get; set; } = string.Empty;
-        public PanelDescriptor? PanelDescription { get; set; } = null;
+        public PanelDescriptor? PanelDescriptor {
+            get;
+            set; } = null;
         public List<ActionMapping> ActionMappings { get; set; } = new();
         public List<AbsoluteActionMapping> AbsoluteActionMappings { get; set; } = new();
         public List<SourceMapping> SourceMappings { get; set; } = new();
-        //public Dictionary<byte, Tuple<ButtonUpdateStates, IPanelAction>> ActionMappings { get; set; } = new();
-        //public Dictionary<byte, IAbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
-        //public Dictionary<byte, IPanelSource> SourceMappings { get; set; } = new();
 
         public PanelProfile()
         {
@@ -25,6 +24,9 @@ namespace Profiling
             Serializable? Serialized = JsonSerializer.Deserialize<Serializable?>(Json) ?? throw new PanelProfileException("Couldn't serialize.");
             if (Serialized.Name is not null)
                 Name = Serialized.Name;
+
+            if (Serialized.PanelDescriptor is not null)
+                PanelDescriptor = new(Serialized.PanelDescriptor);
 
             if (Serialized.ActionMappings is not null)
             {
@@ -70,9 +72,9 @@ namespace Profiling
             public Dictionary<byte, string>? AbsoluteActionMappings { get; set; } = null;
             public Dictionary<byte, string>? SourceMappings { get; set; } = null;
             public PanelDescriptor.Serializable? PanelDescriptor { get; set; } = null;
-            public Dictionary<string, string[]?>? ActionMappingsOptions { get; set; } = null;
-            public Dictionary<string, string[]?>? AbsoluteActionMappingsOptions { get; set; } = null;
-            public Dictionary<string, string[]?>? SourceMappingsOptions { get; set; } = null;
+            public Dictionary<byte, Dictionary<string, string?>?>? ActionMappingsOptions { get; set; } = null;
+            public Dictionary<byte, Dictionary<string, string?>?>? AbsoluteActionMappingsOptions { get; set; } = null;
+            public Dictionary<byte, Dictionary<string, string?>?>? SourceMappingsOptions { get; set; } = null;
 
             public Serializable()
             {
@@ -82,25 +84,34 @@ namespace Profiling
             {
                 Name = Source.Name;
 
+                if (Source.PanelDescriptor is not null)
+                    PanelDescriptor = new PanelDescriptor.Serializable(Source.PanelDescriptor);
+
                 ActionMappings = new();
+                ActionMappingsOptions = new();
                 foreach (var IDAction in Source.ActionMappings)
                 {
                     string? ActionTypeName = (IDAction.Action.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
                     ActionMappings.Add(IDAction.ID, new string[] { $"{IDAction.UpdateState}", ActionTypeName });
+                    ActionMappingsOptions.Add(IDAction.ID, IDAction.Action.GetOptions());
                 }
 
                 AbsoluteActionMappings = new();
+                AbsoluteActionMappingsOptions = new();
                 foreach (var IDAction in Source.AbsoluteActionMappings)
                 {
                     string? ActionTypeName = (IDAction.AbsoluteAction.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
                     AbsoluteActionMappings.Add(IDAction.ID, ActionTypeName);
+                    AbsoluteActionMappingsOptions.Add(IDAction.ID, IDAction.AbsoluteAction.GetOptions());
                 }
 
                 SourceMappings = new();
+                SourceMappingsOptions = new();
                 foreach (var IDSource in Source.SourceMappings)
                 {
                     string? ActionTypeName = (IDSource.Source.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
                     SourceMappings.Add(IDSource.ID, ActionTypeName);
+                    AbsoluteActionMappingsOptions.Add(IDSource.ID, IDSource.Source.GetOptions());
                 }
             }
         }

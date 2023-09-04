@@ -23,10 +23,16 @@ namespace DynamicPanelController
                 Descriptor = new();
             InitializeComponent();
             GlobalButton.IsEnabled = GlobalAvailable;
+            Loaded += WindowLoaded;
         }
 
         public void WindowLoaded(object? Sender, EventArgs Args)
         {
+            if (Descriptor is null)
+                return;
+            ButtonCountEntry.Text = Descriptor.ButtonCount.ToString();
+            AbsoluteCountEntry.Text = Descriptor.AbsoluteCount.ToString();
+            DisplayCountEntry.Text = Descriptor.DisplayCount.ToString();
 
         }
 

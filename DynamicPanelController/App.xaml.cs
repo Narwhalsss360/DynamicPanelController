@@ -14,6 +14,7 @@ using System.Text.Json;
 using Panel.Communication;
 using System.Linq;
 using Panel;
+using System.Text.Json.Serialization;
 
 namespace DynamicPanelController
 {
@@ -36,30 +37,56 @@ namespace DynamicPanelController
 
         public struct AppSettings
         {
-            public string FilePath = $"";
+            public string FilePath = $"{Environment.CurrentDirectory}\\Settings.json";
             public string ExtensionsDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Extensions";
             public string ProfilesDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Profiles";
-            public string LogPath {   get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
+            public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
             public PanelDescriptor? GlobalPanelDescriptor = null;
             public Dictionary<string, string> GlobalSettings = new();
             public Dictionary<string, string> GlobalSettingsValidOptions = new();
 
-            class Serializable
+            public AppSettings()
+            {
+            }
+
+
+            public AppSettings(Serializable Serialized)
+            {
+                ExtensionsDirectory = Serialized.ExtensionsDirectory;
+                ProfilesDirectory = Serialized.ProfilesDirectory;
+                LogDirectory = Serialized.LogDirectory;
+                if (Serialized.GlobalPanelDescriptor is not null)
+                    GlobalPanelDescriptor = new PanelDescriptor(Serialized.GlobalPanelDescriptor);
+                if (Serialized.GlobalSettings is not null)
+                    GlobalSettings = Serialized.GlobalSettings;
+                if (Serialized.GlobalSettingsValidOptions is not null)
+                    GlobalSettingsValidOptions = Serialized.GlobalSettingsValidOptions;
+            }
+
+            public class Serializable
             {
                 public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
                 public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
-                public string LogPath { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
+                public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
                 public PanelDescriptor.Serializable? GlobalPanelDescriptor { set; get; } = null;
                 public Dictionary<string, string>? GlobalSettings { set; get; } = new();
                 public Dictionary<string, string>? GlobalSettingsValidOptions { set; get; } = new();
 
+                [JsonConstructor]
                 public Serializable()
                 {
                 }
-            }
 
-            public AppSettings()
-            {
+                public Serializable(AppSettings Settings)
+                {
+                    ExtensionsDirectory = Settings.ExtensionsDirectory;
+                    ProfilesDirectory = Settings.ProfilesDirectory;
+                    LogDirectory = Settings.LogDirectory;
+                    if (Settings.GlobalPanelDescriptor is not null)
+                        GlobalPanelDescriptor = new PanelDescriptor.Serializable(Settings.GlobalPanelDescriptor);
+                    GlobalSettings = Settings.GlobalSettings;
+                    GlobalSettingsValidOptions = Settings.GlobalSettingsValidOptions;
+                }
             }
         }
 
@@ -185,6 +212,10 @@ namespace DynamicPanelController
                 ProfileStream.Read(FileBytes, 0, FileBytes.Length);
                 LoadProfile(FileBytes);
             }
+            if (Profiles.Count == 0)
+            {
+                Profiles.Add(new PanelProfile() { Name = "Empty" });
+            }
         }
 
         public void LoadSettings()
@@ -196,9 +227,17 @@ namespace DynamicPanelController
             }
 
             using var SettingsFile = new StreamReader(Settings.FilePath);
-            AppSettings? Deserialized = JsonSerializer.Deserialize<AppSettings>(SettingsFile.ReadToEnd());
+            AppSettings.Serializable? Deserialized = null;
+            try
+            {
+                Deserialized = JsonSerializer.Deserialize<AppSettings.Serializable>(SettingsFile.ReadToEnd());
+            }
+            catch (JsonException Ex)
+            {
+                Error($"Exception occured while loading settings {Ex.Message}. Loading default settings.");
+            }
             if (Deserialized is not null)
-                Settings = (AppSettings)Deserialized;
+                Settings = new(Deserialized);
         }
 
         public void RefreshPanelExtensionProperties()
@@ -309,14 +348,14 @@ namespace DynamicPanelController
 
         public void SaveSettings()
         {
-            using var SettingsFile = new StreamWriter($"{Environment.CurrentDirectory}\\Settings.json");
-            SettingsFile.Write(JsonSerializer.Serialize(Settings, options: new JsonSerializerOptions() { WriteIndented = true }));
+            using var SettingsFile = new StreamWriter(Settings.FilePath);
+            SettingsFile.Write(JsonSerializer.Serialize(new AppSettings.Serializable(Settings), options: new JsonSerializerOptions() { WriteIndented = true }));
         }
 
         public void SaveProfiles()
         {
             foreach (var Profile in Profiles)
-                using (var ProfileFile = new StreamWriter(Settings.FilePath))
+                using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
                     ProfileFile.Write(Profile.Serialize());
         }
 
@@ -327,7 +366,9 @@ namespace DynamicPanelController
             List<EventHandler>? Handlers = GetProperty<Extension, List<EventHandler>>("ExitingHandlers");
             Handlers?.ForEach(Handler => Handler.Invoke(this, new EventArgs()));
             Info("Program exiting");
-            using var LogStream = new StreamWriter(Settings.LogPath, true);
+            SaveSettings();
+            SaveProfiles();
+            using var LogStream = new StreamWriter(Settings.LogDirectory, true);
             LogStream.Write(CurrentLog);
         }
 
