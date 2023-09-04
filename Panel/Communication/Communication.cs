@@ -51,6 +51,8 @@ namespace Panel.Communication
             else return ButtonUpdateStates.Released;
         }
 
+        public static ButtonUpdateStates ToPushedButtonUpdateState(this bool  State) => State ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
+
         public static string ToString(this DisplayTypes Type)
         {
             return Type switch

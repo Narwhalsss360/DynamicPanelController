@@ -9,24 +9,20 @@ namespace IncludedExtensions
     {
         string? ProgramPath = null;
         Process? UserProcess = null;
+        Dictionary<string, string?> CurrentOptions = new();
 
         public string?[]?[]? ValidOptions() => new string?[]?[] { new string?[] { "Path", null } };
 
-        public static bool IsValidProgramPath(string? ProgramPath)
-        {
-            if (ProgramPath is null)
-                return false;
+        public Dictionary<string, string?>? GetOptions() => CurrentOptions;
 
-            return true;
-        }
-
-        public string? NewOption(Dictionary<string, string?> Options)
+        public string? SetOptions(Dictionary<string, string?> Options)
         {
             if (!Options.ContainsKey("Path"))
                 return "Must specify a program path.";
-            if (!IsValidProgramPath(Options["Path"]))
-                return "Invalid Path.";
+            if (!File.Exists(Options["Path"]))
+                return "File does not exist.";
             ProgramPath = Options["Path"];
+            CurrentOptions = Options;
             return null;
         }
 

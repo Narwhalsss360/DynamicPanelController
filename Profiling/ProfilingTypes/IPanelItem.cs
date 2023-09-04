@@ -4,7 +4,8 @@ namespace Profiling.ProfilingTypes
     public interface IPanelItem
     {
         public string?[]?[]? ValidOptions() => null;
-        public string? NewOptions(Dictionary<string, string?> Options) => null;
+        public string? SetOptions(Dictionary<string, string?> Options) => null;
+        public Dictionary<string, string?>? GetOptions() => null;
     }
 
     public static class PanelItemExtensions

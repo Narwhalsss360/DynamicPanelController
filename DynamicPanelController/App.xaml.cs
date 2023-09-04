@@ -234,8 +234,8 @@ namespace DynamicPanelController
 
                 foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                 {
-                    List<byte> Bytes = new() { SourceMapping.Key };
-                    if (SourceMapping.Value.GetSourceValue() is not string OutString)
+                    List<byte> Bytes = new() { SourceMapping.ID };
+                    if (SourceMapping.Source.GetSourceValue() is not string OutString)
                         continue;
                     Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
                     Bytes.Add(0);
@@ -288,18 +288,10 @@ namespace DynamicPanelController
                         break;
 
                     PanelProfile SelectedProfile = Profiles[SelectedProfileIndex];
-                    if (!SelectedProfile.ActionMappings.ContainsKey(InputID))
-                        break;
-                    var MappingTuple = SelectedProfile.ActionMappings[InputID];
-                    if (MappingTuple is not null)
-                    {
-                        if (MappingTuple.Item1 == ButtonState)
-                        {
-                            Info($"Doing action { MappingTuple.Item2.GetDescriptorAttribute()?.Name }");
-                            MappingTuple.Item2.Do();
-                        }
-                    }
-
+                    if (SelectedProfile.ActionMappings.Find(A => A.ID == InputID && A.UpdateState == ButtonState) is not ActionMapping Mapping)
+                        return;
+                    Info($"Doing action { Mapping.Action.GetDescriptorAttribute()?.Name }");
+                    Mapping.Action.Do();
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
                     break;
@@ -342,7 +334,7 @@ namespace DynamicPanelController
         static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null) => typeof(ClassType).GetProperty(PropertyName)?.SetValue(Instance, Value);
 
         static PropertyType? GetProperty<ClassType, PropertyType>(string PropertyName, object? Instance = null) => (PropertyType?)(typeof(ClassType).GetProperty(PropertyName)?.GetValue(Instance));
-    
+
         public void Info(string Message)
         {
             if (CurrentLog.Length > 0)

@@ -9,12 +9,12 @@ namespace Profiling
     {
         public string Name { get; set; } = string.Empty;
         public PanelDescriptor? PanelDescription { get; set; } = null;
-        public Dictionary<byte, Tuple<ButtonUpdateStates, IPanelAction>> ActionMappings { get; set; } = new();
-        public Dictionary<byte, IAbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
-        public Dictionary<byte, IPanelSource> SourceMappings { get; set; } = new();
-        public Dictionary<string, string[]?> ActionMappingsOptions = new();
-        public Dictionary<string, string[]?> AbsoluteActionMappingsOptions = new();
-        public Dictionary<string, string[]?> SourceMappingsOptions = new();
+        public List<ActionMapping> ActionMappings { get; set; } = new();
+        public List<AbsoluteActionMapping> AbsoluteActionMappings { get; set; } = new();
+        public List<SourceMapping> SourceMappings { get; set; } = new();
+        //public Dictionary<byte, Tuple<ButtonUpdateStates, IPanelAction>> ActionMappings { get; set; } = new();
+        //public Dictionary<byte, IAbsolutePanelAction> AbsoluteActionMappings { get; set; } = new();
+        //public Dictionary<byte, IPanelSource> SourceMappings { get; set; } = new();
 
         public PanelProfile()
         {
@@ -34,7 +34,7 @@ namespace Profiling
                     if (ExtensionType is null)
                         continue;
                     IPanelAction? Instance = Activator.CreateInstance(ExtensionType) as IPanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    ActionMappings.Add(IDAction.Key, new Tuple<ButtonUpdateStates, IPanelAction>(IDAction.Value[0].ToButtonUpdateState(), Instance));
+                    ActionMappings.Add(new ActionMapping() { ID = IDAction.Key, UpdateState = IDAction.Value[0].ToButtonUpdateState(), Action = Instance });
                 }
             }
             if (Serialized.AbsoluteActionMappings is not null)
@@ -45,7 +45,7 @@ namespace Profiling
                     if (ExtensionType is null)
                         continue;
                     IAbsolutePanelAction? Instance = Activator.CreateInstance(ExtensionType) as IAbsolutePanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    AbsoluteActionMappings.Add(IDAction.Key, Instance);
+                    AbsoluteActionMappings.Add(new AbsoluteActionMapping() { ID = IDAction.Key, AbsoluteAction = Instance });
                 }
             }
             if (Serialized.SourceMappings is not null)
@@ -56,7 +56,7 @@ namespace Profiling
                     if (ExtensionType is null)
                         continue;
                     IPanelSource? Instance = Activator.CreateInstance(ExtensionType) as IPanelSource ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    SourceMappings.Add(IDSource.Key, Instance);
+                    SourceMappings.Add(new SourceMapping() { ID = IDSource.Key, Source = Instance });
                 }
             }
         }
@@ -85,22 +85,22 @@ namespace Profiling
                 ActionMappings = new();
                 foreach (var IDAction in Source.ActionMappings)
                 {
-                    string? ActionTypeName = (IDAction.Value.Item2.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
-                    ActionMappings.Add(IDAction.Key, new string[] { $"{IDAction.Value.Item1}", ActionTypeName });
+                    string? ActionTypeName = (IDAction.Action.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
+                    ActionMappings.Add(IDAction.ID, new string[] { $"{IDAction.UpdateState}", ActionTypeName });
                 }
 
                 AbsoluteActionMappings = new();
                 foreach (var IDAction in Source.AbsoluteActionMappings)
                 {
-                    string? ActionTypeName = (IDAction.Value.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
-                    AbsoluteActionMappings.Add(IDAction.Key, ActionTypeName);
+                    string? ActionTypeName = (IDAction.AbsoluteAction.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
+                    AbsoluteActionMappings.Add(IDAction.ID, ActionTypeName);
                 }
 
                 SourceMappings = new();
                 foreach (var IDSource in Source.SourceMappings)
                 {
-                    string? ActionTypeName = (IDSource.Value.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
-                    SourceMappings.Add(IDSource.Key, ActionTypeName);
+                    string? ActionTypeName = (IDSource.Source.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
+                    SourceMappings.Add(IDSource.ID, ActionTypeName);
                 }
             }
         }

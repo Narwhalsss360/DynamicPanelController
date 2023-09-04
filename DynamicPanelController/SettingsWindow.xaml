@@ -74,8 +74,8 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Text="Global Options" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-            <Button x:Name="RemoveOptionButton" Grid.Row="1" Content="Remove" Margin="5" IsEnabled="False" Click="RemoveButtonClicked"/>
-            <Button x:Name="AddOptionButton" Grid.Row="1" Grid.Column="1" Content="Add" Margin="5" Click="AddButtonClicked"/>
+            <Button x:Name="AddOptionButton" Grid.Row="1" Content="Add" Margin="5" Click="AddButtonClicked"/>
+            <Button x:Name="RemoveOptionButton" Grid.Row="1" Content="Remove" Grid.Column="1" Margin="5" IsEnabled="False" Click="RemoveButtonClicked"/>
         </Grid>
 
         <Grid Grid.Row="2" Grid.Column="1">
