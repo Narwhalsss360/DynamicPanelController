@@ -77,6 +77,8 @@ namespace DynamicPanelController
 
         public void DisplayCountChanged(object? Sender, EventArgs Args)
         {
+            if (string.IsNullOrEmpty(DisplayCountEntry.Text))
+                return;
             UpdateDisplayDescriptor();
         }
 
@@ -143,12 +145,15 @@ namespace DynamicPanelController
 
         string? CheckValid()
         {
-            if (!byte.TryParse(ButtonCountEntry.Text, out byte ButtonCount))
-                return "Button count is not a number from 0 -> 255.";
-            if (!byte.TryParse(AbsoluteCountEntry.Text, out byte AbsoluteCount))
-                return "Absolute count is not a number from 0 -> 255.";
-            if (!byte.TryParse(DisplayCountEntry.Text, out byte DisplayCount))
-                return "Display count is not a number from 0 -> 255.";
+            byte ButtonCount;
+            if (!byte.TryParse(ButtonCountEntry.Text, out ButtonCount))
+                ButtonCount = 0;
+            byte AbsoluteCount;
+            if (!byte.TryParse(AbsoluteCountEntry.Text, out AbsoluteCount))
+                AbsoluteCount = 0;
+            byte DisplayCount;
+            if (!byte.TryParse(DisplayCountEntry.Text, out DisplayCount))
+                DisplayCount = 0;
 
             Descriptor ??= new();
 
