@@ -6,7 +6,6 @@ namespace DynamicPanelController
 {
     public partial class SettingsWindow : Window
     {
-        readonly App App = (App)Application.Current;
         public App.AppSettings EditedSettings;
         List<BindableDictionaryPair> Options { get; set; } = new();
         PanelDescriptorEditor? DescriptorEditor;
@@ -18,7 +17,7 @@ namespace DynamicPanelController
             EditedSettings = SettingsTemplate ?? new App.AppSettings();
             Loaded += WindowLoaded;
             foreach (var Pair in EditedSettings.GlobalSettings)
-                Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = Pair.Key, ThisValue = Pair.Value });
+                Options.Add(new(EditedSettings.GlobalSettings, Pair.Key, Pair.Value));
         }
 
         string? VerifyValid()
@@ -61,7 +60,7 @@ namespace DynamicPanelController
         {
             if (GlobalOptionsPanel.SelectedIndex == -1)
                 return;
-            if (EditedSettings.GlobalSettings.ContainsKey(Options[GlobalOptionsPanel.SelectedIndex].ThisKey))
+            if (EditedSettings.GlobalSettings.ContainsKey(Options[GlobalOptionsPanel.SelectedIndex].Key))
                 EditedSettings.GlobalSettings.Remove(Options[GlobalOptionsPanel.SelectedIndex].Key);
             Options.RemoveAt(GlobalOptionsPanel.SelectedIndex);
             GlobalOptionsPanel.Items.Refresh();
@@ -74,7 +73,7 @@ namespace DynamicPanelController
                 KeyName = $"New Key({i})";
 
             EditedSettings.GlobalSettings.Add(KeyName, "New Value");
-            Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = KeyName, ThisValue = "New Value" });
+            Options.Add(new(EditedSettings.GlobalSettings, KeyName, "New Value"));
             GlobalOptionsPanel.Items.Refresh();
         }
 
@@ -101,7 +100,7 @@ namespace DynamicPanelController
             ProfilesDirectoryEntry.Text = EditedSettings.ProfilesDirectory;
             LogDirectoryEntry.Text = EditedSettings.LogDirectory;
             foreach (var KVP in EditedSettings.GlobalSettings)
-                Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = KVP.Key, ThisValue = KVP.Value });
+                Options.Add(new(EditedSettings.GlobalSettings, KVP.Key, KVP.Value));
             GlobalOptionsPanel.ItemsSource = Options;
         }
     }
@@ -109,8 +108,8 @@ namespace DynamicPanelController
     class BindableDictionaryPair
     {
         public Dictionary<string, string>? Owner;
-        public string? ThisKey;
-        public string? ThisValue;
+        string ThisKey;
+        string ThisValue;
 
         public string Key
         {
@@ -154,6 +153,20 @@ namespace DynamicPanelController
                 ThisValue = value;
                 Owner?.Add(ThisKey, ThisValue);
             }
+        }
+
+        public BindableDictionaryPair()
+        {
+            Owner = new Dictionary<string, string>();
+            ThisKey = string.Empty;
+            ThisValue = string.Empty;
+        }
+
+        public BindableDictionaryPair(Dictionary<string, string> Owner, string Key, string Value)
+        {
+            this.Owner = Owner;
+            ThisKey = Key;
+            ThisValue = Value;
         }
     }
 }

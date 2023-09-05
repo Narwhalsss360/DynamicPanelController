@@ -4,21 +4,21 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml.Linq;
 
 namespace DynamicPanelController
 {
     public partial class PanelDescriptorEditor : Window
     {
         public PanelDescriptor? Descriptor = null;
-        List<DisplayDescriptorContentGrid> UIDisplayDescriptors = new();
-        List<byte> DisplayTypesList = new();
-        List<object> DisplayDescriptors = new();
+        readonly List<DisplayDescriptorContentGrid> UIDisplayDescriptors = new();
+        readonly List<byte> DisplayTypesList = new();
+        readonly List<object> DisplayDescriptors = new();
 
         public PanelDescriptorEditor(PanelDescriptor? Template = null, bool GlobalAvailable = false)
         {
             Descriptor = Template;
-            if (Descriptor is null)
-                Descriptor = new();
+            Descriptor ??= new();
             InitializeComponent();
             GlobalButton.IsEnabled = GlobalAvailable;
             Loaded += WindowLoaded;
@@ -53,9 +53,11 @@ namespace DynamicPanelController
                     Elements[2] = new ComboBox() { ItemsSource = new string[] { "Rows", "Columns" }, Margin = new Thickness() { Left = 5, Right = 5 } };
                     Elements[3] = new TextBox() { VerticalAlignment = VerticalAlignment.Center };
                     DisplayDescriptorContentGrid NewContent = new(Elements);
-                    (NewContent.Elements[1] as ComboBox).SelectionChanged += (Sender, Args) => { NewContent.CallEvent((object)DisplayDescriptorTypeChanged, null, Args); };
+                    if (NewContent.Elements?[1] is ComboBox Combo1)
+                        Combo1.SelectionChanged += (Sender, Args) => { NewContent.CallEvent((object)DisplayDescriptorTypeChanged, null, Args); };
                     NewContent.AddKeyedEvent((object)DisplayDescriptorTypeChanged, DisplayDescriptorTypeChanged);
-                    (NewContent.Elements[3] as TextBox).TextChanged += (Sender, Args) => { NewContent.CallEvent((object)EntryTextChanged, null, Args); };
+                    if (NewContent.Elements?[3] is TextBox Text3)
+                        Text3.TextChanged += (Sender, Args) => { NewContent.CallEvent((object)EntryTextChanged, null, Args); };
                     NewContent.AddKeyedEvent((object)EntryTextChanged, EntryTextChanged);
                     Default.Add(NewContent);
                 }
@@ -64,10 +66,14 @@ namespace DynamicPanelController
             DisplayDescriptorStackPanel.Children.Clear();
             for (int i = 0; i < DisplayCount; i++)
                 DisplayDescriptorStackPanel.Children.Add(UIDisplayDescriptors[i]);
+            if (Descriptor is null)
+                return;
             if (Descriptor.DisplayTypes is null)
                 return;
+            if (Descriptor.DisplayDescriptor is null)
+                return;
             DisplayTypesList.Clear();
-            foreach (var item in Descriptor?.DisplayTypes)
+            foreach (var item in Descriptor.DisplayTypes)
                 DisplayTypesList.Add((byte)item);
             DisplayDescriptors.Clear();
             DisplayDescriptors.AddRange(Descriptor.DisplayDescriptor);
@@ -80,38 +86,38 @@ namespace DynamicPanelController
 
         void RowColumnSelected(object? Sender, EventArgs Args)
         {
-            DisplayDescriptorContentGrid? ThisDescriptor = Sender as DisplayDescriptorContentGrid;
-            if (ThisDescriptor is null)
+            if (Sender is not DisplayDescriptorContentGrid ThisDescriptor)
                 return;
 
-            if (ThisDescriptor.Elements?[2] is not ComboBox TypeCombo)
+            if (ThisDescriptor.Elements?[2] is not ComboBox)
                 return;
 
-            (ThisDescriptor.Elements[3] as TextBox).Text = "";
+            if (ThisDescriptor.Elements?[3] is TextBox Text3)
+                Text3.Text = "";
         }
 
         public void EntryTextChanged(object? Sender, EventArgs Args)
         {
-            DisplayDescriptorContentGrid? ThisDescriptor = Sender as DisplayDescriptorContentGrid;
-            if (ThisDescriptor is null)
+            if (Sender is not DisplayDescriptorContentGrid ThisDescriptor)
                 return;
 
             if (ThisDescriptor.Context is byte)
             {
-                if (byte.TryParse((ThisDescriptor.Elements[3] as TextBox).Text, out byte Out))
+                if (byte.TryParse((ThisDescriptor.Elements?[3] as TextBox)?.Text, out byte Out))
                     ThisDescriptor.Context = Out;
             }
             else if (ThisDescriptor.Context is byte[])
             {
-                if (byte.TryParse((ThisDescriptor.Elements[3] as TextBox).Text, out byte Out))
-                    (ThisDescriptor.Context as byte[])[(ThisDescriptor.Elements[1] as ComboBox).SelectedIndex] = Out;
+                if (byte.TryParse((ThisDescriptor.Elements?[3] as TextBox)?.Text, out byte Out))
+                    if (ThisDescriptor.Context is byte[] Context)
+                        if (ThisDescriptor.Elements?[1] is ComboBox Combo1)
+                    Context[Combo1.SelectedIndex] = Out;
             }
         }
 
         void DisplayDescriptorTypeChanged(object? Sender, EventArgs Args)
         {
-            DisplayDescriptorContentGrid? ThisDescriptor = Sender as DisplayDescriptorContentGrid;
-            if (ThisDescriptor is null)
+            if (Sender is not DisplayDescriptorContentGrid ThisDescriptor)
                 return;
 
             if (ThisDescriptor.Elements?[1] is not ComboBox TypeCombo)
@@ -121,13 +127,15 @@ namespace DynamicPanelController
             {
                 case DisplayTypes.RowColumn:
                     ThisDescriptor.Elements[2] = new ComboBox() { ItemsSource = new string[] { "Rows", "Columns" }, Margin = new Thickness() { Left = 5, Right = 5 } };
-                    (ThisDescriptor.Elements[2] as ComboBox).SelectionChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)RowColumnSelected, null, Args); };
+                    if (ThisDescriptor.Elements?[2] is ComboBox Combo2)
+                        Combo2.SelectionChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)RowColumnSelected, null, Args); };
                     ThisDescriptor.AddKeyedEvent((object)RowColumnSelected, RowColumnSelected);
                     ThisDescriptor.Context = new byte[2];
                     break;
                 case DisplayTypes.SevenSegment:
                     ThisDescriptor.Elements[2] = new TextBlock() { Text = "Digits:", Margin = new Thickness() { Left = 5, Right = 5 } };
-                    (ThisDescriptor.Elements[3] as TextBox).TextChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)EntryTextChanged, null, Args); };
+                    if (ThisDescriptor.Elements[3] is TextBox Text3Inner)
+                        Text3Inner.TextChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)EntryTextChanged, null, Args); };
                     if (ThisDescriptor.CustomEvents.ContainsKey((object)RowColumnSelected))
                         ThisDescriptor.CustomEvents.Remove((object)RowColumnSelected);
                     ThisDescriptor.Context = new byte();
@@ -135,7 +143,8 @@ namespace DynamicPanelController
                 default:
                     break;
             }
-            (ThisDescriptor.Elements[3] as TextBox).Text = "";
+            if (ThisDescriptor.Elements?[3] is TextBox Text3)
+                Text3.Text = "";
             ThisDescriptor.Update();
         }
 
@@ -158,7 +167,9 @@ namespace DynamicPanelController
             Descriptor.DisplayDescriptor = new byte[DisplayCount][];
             for (int i = 0; i < UIDisplayDescriptors.Count; i++)
             {
-                DisplayTypes DisplayType = (UIDisplayDescriptors[i].Elements[1] as ComboBox).SelectedIndex == (int)DisplayTypes.RowColumn ? DisplayTypes.RowColumn : DisplayTypes.SevenSegment;
+                if (UIDisplayDescriptors[i].Elements?[1] is not ComboBox Combo1)
+                    continue;
+                DisplayTypes DisplayType = Combo1.SelectedIndex == (int)DisplayTypes.RowColumn ? DisplayTypes.RowColumn : DisplayTypes.SevenSegment;
                 Descriptor.DisplayTypes[i] = DisplayType;
                 if (DisplayType == DisplayTypes.RowColumn)
                 {

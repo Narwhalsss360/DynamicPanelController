@@ -133,7 +133,7 @@ namespace DynamicPanelController
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
 
-        List<PanelExtension.Extension> PanelExtensions = new();
+        readonly List<Extension> PanelExtensions = new();
 
         App()
         {
@@ -448,7 +448,5 @@ namespace DynamicPanelController
         }
 
         static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null) => typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : 0))?.SetValue(Instance, Value);
-
-        static PropertyType? GetProperty<ClassType, PropertyType>(string PropertyName, object? Instance = null) => (PropertyType?)(typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : 0))?.GetValue(Instance));
     }
 }

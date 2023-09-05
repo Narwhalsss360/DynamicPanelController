@@ -16,9 +16,8 @@ namespace DynamicPanelController
         public PanelProfile EditiedVersion;
         PanelDescriptorEditor? CustomDescriptorEditor = null;
         bool PushedButtonSet = true;
-        bool IgnoreNextItemSelection = false;
         public List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
-        Dictionary<string, string?> EnteredOptions = new();
+        readonly Dictionary<string, string?> EnteredOptions = new();
 
         public ProfileEditor(int SelectedIndex)
         {
@@ -166,9 +165,6 @@ namespace DynamicPanelController
 
         public void PanelItemSelected(object? Sender, EventArgs Args)
         {
-            if (IgnoreNextItemSelection)
-                return;
-
             OptionsListBoxItems.Clear();
             if (PanelItemSelectorList.SelectedIndex == -1)
                 return;
@@ -201,23 +197,29 @@ namespace DynamicPanelController
 
             if (IsButton)
             {
+                if (Activator.CreateInstance(ItemType) is not IPanelAction NewAction)
+                    return;
                 if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
                     EditiedVersion.ActionMappings.Remove(ActionMapping);
-                EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = (IPanelAction)Activator.CreateInstance(ItemType) });
+                EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = NewAction });
                 LoadActionOptions(EditiedVersion.ActionMappings.Last().Action);
             }
             else if (IsAbsolute)
             {
+                if (Activator.CreateInstance(ItemType) is not IAbsolutePanelAction NewAbsoluteAction)
+                    return;
                 if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
                     EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
-                EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = (IAbsolutePanelAction)Activator.CreateInstance(ItemType) });
+                EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = NewAbsoluteAction });
                 LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Last().AbsoluteAction);
             }
             else
             {
+                if (Activator.CreateInstance(ItemType) is not IPanelSource NewSource)
+                    return;
                 if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
                     EditiedVersion.SourceMappings.Remove(SourceMapping);
-                EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = (IPanelSource)Activator.CreateInstance(ItemType) });
+                EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = NewSource });
                 LoadActionOptions(EditiedVersion.SourceMappings.Last().Source);
             }
             OptionsSelectorList?.Items.Refresh();
@@ -351,8 +353,14 @@ namespace DynamicPanelController
                 UIElement Right;
                 if (KeyValuePair.Value is not null && KeyValuePair.Value.Length > 0)
                 {
-                    ComboBox RightComboBox = new() { ItemsSource = KeyValuePair.Value, Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
-                    RightComboBox.SelectedIndex = 0;
+                    ComboBox RightComboBox = new()
+                    {
+                        ItemsSource = KeyValuePair.Value,
+                        Margin = new Thickness(5),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        SelectedIndex = 0
+                    };
                     RightComboBox.DropDownClosed += UpdateEnteredOptions;
                     Right = RightComboBox;
                 }
