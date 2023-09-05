@@ -18,6 +18,7 @@ using System.Windows;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 
 namespace DynamicPanelController
 {
@@ -26,7 +27,23 @@ namespace DynamicPanelController
     public partial class App : Application
     {
         public ObservableCollection<PanelProfile> Profiles = new();
-        public int SelectedProfileIndex = -1;
+        public int SelectedProfileIndex
+        {
+            get
+            {
+                return SelectedProfileIndex;
+            }
+            set
+            {
+                if (value >= Profiles.Count)
+                    return;
+                SelectedProfileIndex = value;
+                SelectedProfileChanged?.Invoke(this, new EventArgs());
+                PanelExtensions.ForEach(E => InvokeMethod<Extension>("SelectedProfileChangedWrapper", new object[] { this, new EventArgs() }, E));
+            }
+        }
+
+        public event EventHandler? SelectedProfileChanged;
 
         public List<Type> Actions = new();
         public List<Type> AbsoluteActions = new();
@@ -158,6 +175,7 @@ namespace DynamicPanelController
 
         private App()
         {
+            SelectedProfileIndex = -1;
             Startup += ApplicationStarting;
             Port.DataReceived += PortDataReceived;
             Collector.PacketsReady += PacketsCollected;
@@ -246,6 +264,8 @@ namespace DynamicPanelController
                     }
                 }
             }
+
+            PanelExtensions.ForEach(E => InvokeMethod<Extension>("ProfilesChangedWrapper", new object?[] { null, Args }, E));
         }
 
         private void ApplicationStarting(object Sender, EventArgs Args)
@@ -478,6 +498,7 @@ namespace DynamicPanelController
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
                 SendSourceMappingsThread.Start();
             CommunicationsStarted?.Invoke(this, new EventArgs());
+            PanelExtensions.ForEach(E => InvokeMethod<Extension>("CommunicationsStartedWrapper", new object?[] { null, new EventArgs() }, E));
         }
 
         private void SendSourceMappings()
@@ -555,6 +576,7 @@ namespace DynamicPanelController
                 Port.Close();
             }
             CommunicationsStopped?.Invoke(this, new EventArgs());
+            PanelExtensions.ForEach(E => InvokeMethod<Extension>("CommunicationsStoppedWrapper", new object?[] { null, new EventArgs() }, E));
         }
 
         public void RouteUpdate(MessageReceiveIDs UpdateType, byte ID, object? State)
@@ -705,6 +727,11 @@ namespace DynamicPanelController
             foreach (var Profile in Profiles)
                 using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
                     ProfileFile.Write(Profile.Serialize());
+        }
+
+        private void SelectIndex(int Index)
+        {
+            SelectedProfileIndex = Index;
         }
 
         private void Exiting(object Sender, EventArgs Args)

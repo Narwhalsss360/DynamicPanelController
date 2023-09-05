@@ -1,12 +1,12 @@
 ﻿using Profiling.ProfilingTypes;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using PanelExtension;
 
 namespace IncludedExtensions
 {
     [PanelActionDescriptor("Execute")]
-    public class Execute : PanelExtension.Extension, IPanelAction
+    public class Execute : Extension, IPanelAction
     {
         private string? ProgramPath = null;
         private Dictionary<string, string?> CurrentOptions = new();

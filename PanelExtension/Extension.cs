@@ -5,6 +5,7 @@ namespace PanelExtension
 {
     public delegate int ExtensionLoader(Assembly AssemblyToLoad, string? ModuleName);
     public delegate void ExtensionRefresher(Extension? Instance = null);
+    public delegate void SelectProfileIndex(int Index);
     public delegate object? PanelExtensionSubscriber(Extension Instance);
     public delegate object? PanelExtensionUnsubscriber(Extension Instance);
 
@@ -14,9 +15,16 @@ namespace PanelExtension
         private static PanelExtensionUnsubscriber? Unsubscriber { get; set; }
         private static ExtensionLoader? ExtensionLoader { get; set; }
         private static ExtensionRefresher? Refresher { get; set; }
+        private static SelectProfileIndex? IndexSelector { get; set; }
+
         public bool ExtensionSubscribed { get; private set; } = false;
         public object? ExtensionSubscriptionResult { get; private set; } = null;
+
         public event EventHandler? Exit;
+        public event EventHandler? ProfilesListChanged;
+        public event EventHandler? SelectedProfileChanged;
+        public event EventHandler? CommunicationsStarted;
+        public event EventHandler? CommunicationsStopped;
 
         public class ApplicationVariables
         {
@@ -102,6 +110,11 @@ namespace PanelExtension
             return ExtensionLoader is null ? int.MinValue : ExtensionLoader(AssemblyToLoad, ModuleName);
         }
 
+        public static void SelectIndex(int Index)
+        {
+            IndexSelector?.Invoke(Index);
+        }
+
         protected object? TryUnsubscribe()
         {
             if (Unsubscriber is null)
@@ -112,6 +125,26 @@ namespace PanelExtension
                 ExtensionSubscribed = false;
 
             return ExtensionSubscriptionResult;
+        }
+
+        private void ProfilesListChangedWrapper(object? Sender, EventArgs Args)
+        {
+            ProfilesListChanged?.Invoke(Sender, Args);
+        }
+
+        private void SelectedProfileChangedWrapper(object? Sender, EventArgs Args)
+        {
+            SelectedProfileChanged?.Invoke(Sender, Args);
+        }
+
+        private void CommunicationsStartedWrapper(object? Sender, EventArgs Args)
+        {
+            CommunicationsStarted?.Invoke(Sender, Args);
+        }
+
+        private void CommunicationsStoppedWrapper(object? Sender, EventArgs Args)
+        {
+            CommunicationsStopped?.Invoke(Sender, Args);
         }
 
         private void ApplicationExiting(object? Sender, EventArgs Args)
