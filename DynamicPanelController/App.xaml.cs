@@ -19,6 +19,8 @@ using System.Collections.ObjectModel;
 
 namespace DynamicPanelController
 {
+    public delegate void EmulatorDisplayOut(byte ID, string Data);
+
     public partial class App : Application
     {
         public ObservableCollection<PanelProfile> Profiles = new();
@@ -36,6 +38,9 @@ namespace DynamicPanelController
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
         public bool Communicating { get; private set; } = false;
+        public bool AllowEmulator { get; private set; } = false;
+        private bool Emulating = false;
+        public EmulatorDisplayOut? EmulatorDisplay = null;
 
         public struct AppSettings
         {
@@ -321,6 +326,8 @@ namespace DynamicPanelController
             }
             if (Deserialized is not null)
                 Settings = new(Deserialized);
+            //if (File.Exists($"{Environment.CurrentDirectory}\\Emulate"))
+                AllowEmulator = true;
         }
 
         private object? SubscribePanelExtension(Extension Extension)
@@ -360,10 +367,18 @@ namespace DynamicPanelController
             return null;
         }
 
-        public void StartPortCommunication()
+        public void StartPortCommunication(bool Emulate = false)
         {
-            Logger.Info($"Starting communications on port {Port.PortName}");
-            Port.Open();
+            Emulating = Emulate;
+            if (Emulate)
+            {
+                Logger.Info($"Starting emulation.");
+            }
+            else
+            {
+                Logger.Info($"Starting communications on port {Port.PortName}.");
+                Port.Open();
+            }
             SuspendSendThread = false;
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
                 SendSourceMappingsThread.Start();
@@ -375,31 +390,44 @@ namespace DynamicPanelController
         {
             while (!SuspendSendThread)
             {
-                if (!Port.IsOpen)
-                    continue;
-                if (SelectedProfileIndex == -1 || Profiles.Count == 0)
-                    continue;
-                if (Profiles[SelectedProfileIndex].SourceMappings.Count == 0)
-                    continue;
-
-                foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
+                if (Emulating)
                 {
-                    List<byte> Bytes = new() { SourceMapping.ID };
-                    if (SourceMapping.Source.GetSourceValue() is not string OutString)
+                    if (EmulatorDisplay is null)
                         continue;
-                    Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
-                    Bytes.Add(0);
+                    if (SelectedProfileIndex == -1 || Profiles.Count == 0)
+                        continue;
 
-                    try
+                    foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
+                        if (SourceMapping.Source.GetSourceValue() is string OutString)
+                            EmulatorDisplay(SourceMapping.ID, OutString);
+                }
+                else
+                {
+
+                    if (!Port.IsOpen)
+                        continue;
+                    if (SelectedProfileIndex == -1 || Profiles.Count == 0)
+                        continue;
+
+                    foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                     {
-                        if (SuspendSendThread)
+                        List<byte> Bytes = new() { SourceMapping.ID };
+                        if (SourceMapping.Source.GetSourceValue() is not string OutString)
                             continue;
-                        Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
-                    }
-                    catch (Exception)
-                    {
-                        Logger.Error($"Device on port {Port.PortName} disconnected.");
-                        StopPortCommunication();
+                        Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
+                        Bytes.Add(0);
+
+                        try
+                        {
+                            if (SuspendSendThread)
+                                continue;
+                            Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
+                        }
+                        catch (Exception)
+                        {
+                            Logger.Error($"Device on port {Port.PortName} disconnected.");
+                            StopPortCommunication();
+                        }
                     }
                 }
             }
@@ -407,11 +435,50 @@ namespace DynamicPanelController
 
         public void StopPortCommunication()
         {
-            Logger.Info($"Stopping communications on port {Port.PortName}");
             SuspendSendThread = true;
-            Port.Close();
+            if (Emulating)
+            {
+                Logger.Info($"Stopping emulation.");
+            }
+            else
+            {
+                Logger.Info($"Stopping communications on port {Port.PortName}");
+                Port.Close();
+            }
             Communicating = false;
             CommunicationsStopped?.Invoke(this, new EventArgs());
+        }
+
+        public void RouteUpdate(MessageReceiveIDs UpdateType, byte ID, object? State)
+        {
+            switch (UpdateType)
+            {
+                case MessageReceiveIDs.Reserved:
+                    break;
+                case MessageReceiveIDs.ButtonStateUpdate:
+                    if (State is not ButtonUpdateStates UpdateState)
+                        return;
+                    Logger.Info($"Button {ID} was {UpdateState}");
+
+                    if (SelectedProfileIndex == -1)
+                        return;
+                    if (Profiles[SelectedProfileIndex].ActionMappings.Find(Mapping => Mapping.ID == ID && Mapping.UpdateState == UpdateState) is not ActionMapping Mapping)
+                        return;
+
+                    Logger.Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}.");
+                    object? Result = Mapping.Action.Do();
+                    if (Result is string ResultString)
+                        Logger.Warn($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}");
+                    else if (Result is Exception ResultException)
+                        Logger.Error($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {ResultException.Message}");
+                    else if (Result is not null)
+                        Logger.Warn($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {Result}");
+                    break;
+                case MessageReceiveIDs.AbsolutePosition:
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void PacketsCollected(object? Sender, PacketsReadyEventArgs Args)
@@ -431,17 +498,7 @@ namespace DynamicPanelController
 
                     byte InputID = ReceivedMessage.Data[InputIDIndex];
                     ButtonUpdateStates ButtonState = ReceivedMessage.Data[ButtonStateIndex].ToButtonUpdateState();
-
-                    Logger.Info($"Button {InputID} has been {ButtonState}");
-
-                    if (SelectedProfileIndex == -1)
-                        break;
-
-                    PanelProfile SelectedProfile = Profiles[SelectedProfileIndex];
-                    if (SelectedProfile.ActionMappings.Find(A => A.ID == InputID && A.UpdateState == ButtonState) is not ActionMapping Mapping)
-                        return;
-                    Logger.Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}");
-                    _ = Mapping.Action.Do();
+                    RouteUpdate(MessageReceiveIDs.ButtonStateUpdate, InputID, ButtonState);
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
                     break;
@@ -478,7 +535,8 @@ namespace DynamicPanelController
             Logger.Info("Program exiting...");
             SaveSettings();
             SaveProfiles();
-            new StreamWriter(Settings.LogDirectory, true).Write(Logger.GetLog());
+            using var LogFile = new StreamWriter(Settings.LogDirectory, true);
+            LogFile.Write(Logger.GetLog());
         }
 
         private static object? InvokeMethod<ClassType>(string MethodName, object?[]? Parameters, object? Instance, Type[]? Types = null)

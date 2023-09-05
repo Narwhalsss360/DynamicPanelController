@@ -39,7 +39,7 @@ namespace DynamicPanelController
 
         private void ToggleConnection(object Sender, EventArgs Args)
         {
-            if (App.Port.IsOpen)
+            if (App.Communicating)
             {
                 PortSelection.IsEnabled = true;
                 App.StopPortCommunication();
@@ -48,8 +48,7 @@ namespace DynamicPanelController
             else
             {
                 PortSelection.IsEnabled = false;
-                App.StartPortCommunication();
-                PortConnectionToggle.Content = "Disconnect";
+                App.StartPortCommunication(PortSelection.Text == "Emulator");
                 SwapToggleConnectionButtonText();
             }
         }
@@ -67,6 +66,8 @@ namespace DynamicPanelController
         private void PortSelectionOpened(object Sender, EventArgs Args)
         {
             PortSelection.Items.Clear();
+            if (App.AllowEmulator)
+                PortSelection.Items.Add("Emulator");
             foreach (var item in SerialPort.GetPortNames())
                 _ = PortSelection.Items.Add(item);
         }
@@ -77,9 +78,10 @@ namespace DynamicPanelController
             if (PortSelection.SelectedIndex == -1)
                 return;
             PortConnectionToggle.IsEnabled = true;
-            if (App.Port.IsOpen)
+            if (App.Communicating)
                 return;
-            App.Port.PortName = PortSelection.Text;
+            if (PortSelection.Text != "Emulator")
+                App.Port.PortName = PortSelection.Text;
         }
 
         private void UpdateProfileSelectionItems()
