@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DynamicPanelController"
         mc:Ignorable="d"
-        Title="PanelDescriptorEditor" Height="450" Width="800">
+        Title="PanelDescriptorEditor" Height="450" Width="800" MinWidth="570" MinHeight="190">
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -55,7 +55,7 @@
 
             <Button x:Name="GlobalButton" Content="Set Global" Margin="5" IsEnabled="False" Click="GlobalClicked"/>
             <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5" Click="CancelClicked"/>
-            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5" Click="ApplyClicked"/>
+            <Button x:Name="OKButton" Grid.Column="2" Content="Apply" Margin="5" Click="OKClicked"/>
         </Grid>
     </Grid>
 </Window>

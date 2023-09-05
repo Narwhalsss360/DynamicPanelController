@@ -481,7 +481,8 @@ namespace DynamicPanelController
 
         private void OKClicked(object? Sender, EventArgs Args)
         {
-            EditiedVersion.Name = PanelProfileNameTextBlock.Text;
+            ApplyClicked(this, Args);
+            Close();
         }
 
         private void CancelClicked(object? Sender, EventArgs Args)
@@ -491,8 +492,7 @@ namespace DynamicPanelController
 
         private void ApplyClicked(object? Sender, EventArgs Args)
         {
-            OKClicked(this, Args);
-            Close();
+            EditiedVersion.Name = PanelProfileNameTextBlock.Text;
         }
     }
 }

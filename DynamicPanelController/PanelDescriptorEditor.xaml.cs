@@ -198,7 +198,7 @@ namespace DynamicPanelController
             Close();
         }
 
-        private void ApplyClicked(object? Sender, EventArgs Args)
+        private void OKClicked(object? Sender, EventArgs Args)
         {
             if (CheckValid() is string ErrorMessage)
             {

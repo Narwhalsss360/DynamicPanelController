@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DynamicPanelController"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" MinWidth="660" MinHeight="135">
     <Grid Margin="5" >
         <Grid.RowDefinitions>
             <RowDefinition Height="45"></RowDefinition>

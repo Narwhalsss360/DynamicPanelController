@@ -38,6 +38,7 @@ namespace DynamicPanelController
                 _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            Close();
         }
 
         private void CancelClicked(object? Sender, EventArgs Args)
@@ -53,7 +54,6 @@ namespace DynamicPanelController
                 _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            Close();
         }
 
         private void GlobalOptionSelected(object? Sender, EventArgs Args)
