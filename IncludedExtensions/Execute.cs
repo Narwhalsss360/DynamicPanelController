@@ -13,6 +13,7 @@ namespace IncludedExtensions
         public Execute()
             : base()
         {
+            Exit += ApplicationExiting;
         }
 
         public string?[]?[]? ValidOptions()
@@ -63,8 +64,14 @@ namespace IncludedExtensions
 
             Application?.Logger.Info($"{UserProcess.ProcessName} exited with code {UserProcess.ExitCode}.");
             if (UserProcess.ExitCode != 0)
-                Application?.Logger?.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
+                Application?.Logger.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
             UserProcess = null;
+        }
+
+        private void ApplicationExiting(object? Sender, EventArgs Args)
+        {
+            if (UserProcess is not null)
+                Application?.Logger.Warn("Exitting Controller while executed process has not exitted.");
         }
     }
 }
