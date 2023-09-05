@@ -7,6 +7,7 @@ namespace DynamicPanelController
     public partial class SettingsWindow : Window
     {
         public App.AppSettings EditedSettings;
+        public App App = (App)Application.Current;
 
         private List<BindableDictionaryPair> Options { get; set; } = new();
 
@@ -54,6 +55,7 @@ namespace DynamicPanelController
                 _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            App.Settings = EditedSettings;
         }
 
         private void GlobalOptionSelected(object? Sender, EventArgs Args)
