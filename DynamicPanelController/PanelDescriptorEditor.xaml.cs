@@ -30,7 +30,6 @@ namespace DynamicPanelController
             ButtonCountEntry.Text = Descriptor.ButtonCount.ToString();
             AbsoluteCountEntry.Text = Descriptor.AbsoluteCount.ToString();
             DisplayCountEntry.Text = Descriptor.DisplayCount.ToString();
-
         }
 
         public void UpdateDisplayDescriptor()

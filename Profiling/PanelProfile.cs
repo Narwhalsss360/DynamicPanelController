@@ -21,7 +21,7 @@ namespace Profiling
         {
         }
 
-        public PanelProfile(string Json, Type[] AvailableActions, Type[] AvailableSources)
+        public PanelProfile(string Json, Type[] AvailableActions, Type[] AvailableAbsoluteActions, Type[] AvailableSources)
         {
             Serializable? Serialized = JsonSerializer.Deserialize<Serializable?>(Json) ?? throw new PanelProfileException("Couldn't serialize.");
             if (Serialized.Name is not null)
@@ -45,7 +45,7 @@ namespace Profiling
             {
                 foreach (var IDAction in Serialized.AbsoluteActionMappings)
                 {
-                    Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value);
+                    Type? ExtensionType = Array.Find(AvailableAbsoluteActions, Extension => Extension.FullName == IDAction.Value);
                     if (ExtensionType is null)
                         continue;
                     IAbsolutePanelAction? Instance = Activator.CreateInstance(ExtensionType) as IAbsolutePanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");

@@ -26,9 +26,9 @@ namespace Profiling.ProfilingTypes
             return T.GetCustomAttribute<PanelActionDescriptorAttribute>();
         }
 
-        public static AbsolutePanelActionDescriptorAttribute? GetAbsolutePanelActionDescriptor(this Type T)
+        public static PanelAbsoluteActionDescriptorAttribute? GetPanelAbsoluteActionDescriptor(this Type T)
         {
-            return T.GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
+            return T.GetCustomAttribute<PanelAbsoluteActionDescriptorAttribute>();
         }
 
         public static PanelSourceDescriptorAttribute? GetPanelSourceDescriptor(this Type T)

@@ -77,57 +77,64 @@ namespace DynamicPanelController
             if (IOSelectorList.SelectedItem is not string Selection)
                 return;
 
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
+            PanelDescriptor? Descriptor = EditiedVersion.PanelDescriptor is not null ? EditiedVersion.PanelDescriptor : App.Settings.GlobalPanelDescriptor;
+
+            bool IsButton = IOSelectorList.SelectedIndex < Descriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= Descriptor?.ButtonCount + Descriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
             byte? ID = IsButton
                 ? (byte?)IOSelectorList.SelectedIndex
                 : IsSource
-                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
-                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
-            if (IsButton || IsAbsolute)
+                ? (byte?)(IOSelectorList.SelectedIndex - (Descriptor?.ButtonCount + Descriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - Descriptor?.ButtonCount);
+
+            if (ID is null)
+                return;
+
+            if (IsButton)
             {
                 foreach (var ActionType in App.Actions)
                     _ = PanelItemSelectorList.Items.Add(ActionType.GetPanelActionDescriptor()?.Name);
 
-                if (ID is not null)
+                if (IsButton)
                 {
-                    if (IsButton)
-                    {
-                        if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is not ActionMapping Mapping)
-                            return;
+                    if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is not ActionMapping Mapping)
+                        return;
 
-                        if (Mapping.Action.GetDescriptorAttribute()?.Name is string MappedActionName)
+                    if (Mapping.Action.GetDescriptorAttribute()?.Name is string MappedActionName)
+                    {
+                        for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
                         {
-                            for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
+                            if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
+                                continue;
+                            if (PanelListItemName == MappedActionName)
                             {
-                                if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
-                                    continue;
-                                if (PanelListItemName == MappedActionName)
-                                {
-                                    PanelItemSelectorList.SelectedIndex = i;
-                                    break;
-                                }
+                                PanelItemSelectorList.SelectedIndex = i;
+                                break;
                             }
                         }
                     }
-                    else
+                }
+                
+            }
+            else if (IsAbsolute)
+            {
+                foreach (var AbsoluteActionType in App.AbsoluteActions)
+                    _ = PanelItemSelectorList.Items.Add(AbsoluteActionType.GetPanelAbsoluteActionDescriptor()?.Name);
+
+                if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping Mapping)
+                {
+                    if (Mapping.AbsoluteAction.GetDescriptorAttribute()?.Name is string MappedAbsoluteActionName)
                     {
-                        if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping Mapping)
+                        for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
                         {
-                            if (Mapping.AbsoluteAction.GetDescriptorAttribute()?.Name is string MappedAbsoluteActionName)
+                            if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
+                                continue;
+                            if (PanelListItemName == MappedAbsoluteActionName)
                             {
-                                for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
-                                {
-                                    if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
-                                        continue;
-                                    if (PanelListItemName == MappedAbsoluteActionName)
-                                    {
-                                        PanelItemSelectorList.SelectedIndex = i;
-                                        break;
-                                    }
-                                }
+                                PanelItemSelectorList.SelectedIndex = i;
+                                break;
                             }
                         }
                     }
@@ -138,25 +145,23 @@ namespace DynamicPanelController
                 foreach (var SourceType in App.Sources)
                     _ = PanelItemSelectorList.Items.Add(SourceType.GetPanelSourceDescriptor()?.Name);
 
-                if (ID is not null)
+                if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping Mapping)
                 {
-                    if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping Mapping)
+                    if (Mapping.Source.GetType().GetPanelSourceDescriptor()?.Name is string MappedSourceName)
                     {
-                        if (Mapping.Source.GetType().GetPanelSourceDescriptor()?.Name is string MappedSourceName)
+                        for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
                         {
-                            for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
+                            if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
+                                continue;
+                            if (PanelListItemName == MappedSourceName)
                             {
-                                if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
-                                    continue;
-                                if (PanelListItemName == MappedSourceName)
-                                {
-                                    PanelItemSelectorList.SelectedIndex = i;
-                                    break;
-                                }
+                                PanelItemSelectorList.SelectedIndex = i;
+                                break;
                             }
                         }
                     }
                 }
+                
             }
         }
 
@@ -166,20 +171,27 @@ namespace DynamicPanelController
             if (PanelItemSelectorList.SelectedIndex == -1)
                 return;
 
+            PanelDescriptor? Descriptor = EditiedVersion.PanelDescriptor is not null ? EditiedVersion.PanelDescriptor : App.Settings.GlobalPanelDescriptor;
 
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
+            bool IsButton = IOSelectorList.SelectedIndex < Descriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= Descriptor?.ButtonCount + Descriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
-            Type? ItemType = IsButton || IsAbsolute ? App.Actions[PanelItemSelectorList.SelectedIndex] : App.Sources[PanelItemSelectorList.SelectedIndex];
+            Type? ItemType = IsButton
+                ? App.Actions[PanelItemSelectorList.SelectedIndex]
+                : IsAbsolute
+                ? App.AbsoluteActions[PanelItemSelectorList.SelectedIndex]
+                : App.Sources[PanelItemSelectorList.SelectedIndex];
+
             if (ItemType is null)
                 return;
 
             byte? ID = IsButton
                 ? (byte?)IOSelectorList.SelectedIndex
                 : IsSource
-                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
-                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
+                ? (byte?)(IOSelectorList.SelectedIndex - (Descriptor?.ButtonCount + Descriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - Descriptor?.ButtonCount);
+
             if (ID is null)
                 return;
 
@@ -481,27 +493,6 @@ namespace DynamicPanelController
         {
             OKClicked(this, Args);
             Close();
-        }
-    }
-
-    public class OptionsListBoxItem : Grid
-    {
-        public UIElement? Left = null;
-        public UIElement? Right = null;
-        public object? Context = null;
-
-        public OptionsListBoxItem(UIElement? Left, UIElement? Right, object? Context)
-            : base()
-        {
-            ColumnDefinitions.Add(new ColumnDefinition());
-            ColumnDefinitions.Add(new ColumnDefinition());
-            this.Left = Left;
-            this.Right = Right;
-            SetColumn(Left, 0);
-            SetColumn(Right, 1);
-            this.Context = Context;
-            _ = Children.Add(Left);
-            _ = Children.Add(Right);
         }
     }
 }

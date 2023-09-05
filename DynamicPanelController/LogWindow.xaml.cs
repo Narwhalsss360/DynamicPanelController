@@ -1,4 +1,5 @@
 ﻿using PanelExtension;
+using Profiling;
 using System;
 using System.IO.Ports;
 using System.Windows;
@@ -26,6 +27,8 @@ namespace DynamicPanelController
 
         private void WindowLoaded(object Sender, EventArgs Args)
         {
+            UpdateProfileSelectionItems();
+            ProfileSelection.SelectedIndex = 0;
             LogBox.Text = Log.GetLog();
         }
 
@@ -79,23 +82,48 @@ namespace DynamicPanelController
             App.Port.PortName = PortSelection.Text;
         }
 
-        private void ProfileSelectionOpened(object? Sender, EventArgs Args)
+        private void UpdateProfileSelectionItems()
         {
             ProfileSelection.Items.Clear();
             foreach (var Profile in App.Profiles)
                 _ = ProfileSelection.Items.Add(Profile.Name);
         }
 
-        private void ProfileSelectionClosed(object? Sender, EventArgs Args)
+        private void ProfileSelectionOpened(object? Sender, EventArgs Args)
         {
-            App.SelectedProfileIndex = ProfileSelection.SelectedIndex;
-            EditProfile.IsEnabled = false;
-            if (ProfileSelection.SelectedIndex == -1)
-                return;
-            EditProfile.IsEnabled = true;
+            UpdateProfileSelectionItems();
         }
 
-        private void EditButtonClicked(object? Sender, EventArgs Args)
+        private void ProfileSelectionChanged(object? Sender, EventArgs Args)
+        {
+            DeleteProfile.IsEnabled = false;
+            EditProfile.IsEnabled = false;
+            if (ProfileSelection.SelectedIndex == -1)
+                ProfileSelection.SelectedIndex = 0;
+            if (ProfileSelection.SelectedIndex == -1)
+                return;
+            App.SelectedProfileIndex = ProfileSelection.SelectedIndex;
+            EditProfile.IsEnabled = true;
+            DeleteProfile.IsEnabled = true;
+        }
+
+        private void NewProfileButtonClicked(object? Sender, EventArgs Args)
+        {
+            App.Profiles.Add(new PanelProfile() { Name = "New Profile"});
+            UpdateProfileSelectionItems();
+            ProfileSelection.SelectedIndex = ProfileSelection.Items.Count - 1;
+        }
+
+        private void DeleteProfileButtonClicked(object? Sender, EventArgs Args)
+        {
+            if (MessageBox.Show($"Are you sure you want to delete {ProfileSelection.SelectedItem}?", "Are you sure?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+                return;
+            App.Profiles.RemoveAt(ProfileSelection.SelectedIndex);
+            UpdateProfileSelectionItems();
+            ProfileSelection.SelectedIndex = 0;
+        }
+
+        private void EditProfileButtonClicked(object? Sender, EventArgs Args)
         {
             if (EditorWindow is not null)
                 return;
@@ -110,7 +138,8 @@ namespace DynamicPanelController
             if (EditorWindow is not null)
                 App.Profiles[App.SelectedProfileIndex] = EditorWindow.EditiedVersion;
             EditorWindow = null;
-            ProfileSelectionOpened(Sender, Args);
+            UpdateProfileSelectionItems();
+            ProfileSelection.SelectedIndex = App.SelectedProfileIndex;
         }
 
         private void SettingsButtonClicked(object? Sender, EventArgs Args)
@@ -128,6 +157,7 @@ namespace DynamicPanelController
                 return;
             if (SettingsWindow.Validated)
                 App.Settings = SettingsWindow.EditedSettings;
+            SettingsWindow = null;
         }
 
         private void ApplicationLogChanged(object? Sender, EventArgs Args)

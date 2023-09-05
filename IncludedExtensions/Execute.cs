@@ -66,6 +66,5 @@ namespace IncludedExtensions
                 Application?.Logger?.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
             UserProcess = null;
         }
-
     }
 }

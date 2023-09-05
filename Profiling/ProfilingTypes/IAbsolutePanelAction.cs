@@ -2,23 +2,23 @@
 
 namespace Profiling.ProfilingTypes
 {
-    public class AbsolutePanelActionDescriptorAttribute : PanelActionDescriptorAttribute
+    public class PanelAbsoluteActionDescriptorAttribute : PanelActionDescriptorAttribute
     {
-        public AbsolutePanelActionDescriptorAttribute(string Name) : base(Name)
+        public PanelAbsoluteActionDescriptorAttribute(string Name) : base(Name)
         {
         }
     }
 
-    public interface IAbsolutePanelAction : IPanelAction
+    public interface IAbsolutePanelAction : IPanelItem
     {
         object? Set(object? Value);
     }
 
     public static class AbsolutePanelActionExtensions
     {
-        public static AbsolutePanelActionDescriptorAttribute? GetDescriptorAttribute(this IAbsolutePanelAction Action)
+        public static PanelAbsoluteActionDescriptorAttribute? GetDescriptorAttribute(this IAbsolutePanelAction Action)
         {
-            return Action.GetType().GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
+            return Action.GetType().GetCustomAttribute<PanelAbsoluteActionDescriptorAttribute>();
         }
     }
 }

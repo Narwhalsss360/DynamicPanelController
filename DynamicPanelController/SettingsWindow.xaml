@@ -7,17 +7,13 @@
         mc:Ignorable="d"
         Title="SettingsWindow" Height="450" Width="800">
     <Grid Margin="5">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="45"/>
+            <RowDefinition Height="100"/>
             <RowDefinition />
             <RowDefinition Height="45"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="1">
+        <StackPanel>
             <Grid Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120"/>
@@ -44,27 +40,10 @@
             </Grid>
         </StackPanel>
 
-        <ListBox ItemsSource="{Binding Options}" x:Name="GlobalOptionsPanel" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" SelectionChanged="GlobalOptionSelected">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBox Text="{Binding Key}" Margin="5"/>
-                        <TextBox Grid.Column="1" Text="{Binding Value}" Margin="5"/>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        
-        <Button Grid.Row="0" Margin="5" Content="Global Panel Descriptor Editor" Click="EditDescriptorClicked"/>
-
-        <Grid Grid.Row="0" Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="15"/>
+                <RowDefinition Height="30" />
                 <RowDefinition />
             </Grid.RowDefinitions>
 
@@ -76,6 +55,22 @@
             <TextBlock Text="Global Options" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top"/>
             <Button x:Name="AddOptionButton" Grid.Row="1" Content="Add" Margin="5" Click="AddButtonClicked"/>
             <Button x:Name="RemoveOptionButton" Grid.Row="1" Content="Remove" Grid.Column="1" Margin="5" IsEnabled="False" Click="RemoveButtonClicked"/>
+            
+            <ListBox ItemsSource="{Binding Options}" x:Name="GlobalOptionsPanel" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" SelectionChanged="GlobalOptionSelected">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                        
+                            <TextBox Text="{Binding Key}" Margin="5"/>
+                            <TextBox Grid.Column="1" Text="{Binding Value}" Margin="5"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Grid>
 
         <Grid Grid.Row="2" Grid.Column="1">
@@ -83,11 +78,15 @@
                 <ColumnDefinition />
                 <ColumnDefinition />
                 <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
             </Grid.ColumnDefinitions>
 
-            <Button x:Name="OKButton" Content="OK" Margin="5" Click="OKClicked"/>
-            <Button x:Name="CancelButton" Grid.Column="1" Content="Cancel" Margin="5" Click="CancelClicked"/>
-            <Button x:Name="ApplyButton" Grid.Column="2" Content="Apply" Margin="5" Click="ApplyClicked"/>
+            <Button Grid.Row="0" Margin="5" Grid.ColumnSpan="2" Content="Global Panel Descriptor Editor" Click="EditDescriptorClicked"/>
+            <Button x:Name="OKButton" Grid.Column="3" Content="OK" Margin="5" Click="OKClicked"/>
+            <Button x:Name="CancelButton" Grid.Column="4" Content="Cancel" Margin="5" Click="CancelClicked"/>
+            <Button x:Name="ApplyButton" Grid.Column="5" Content="Apply" Margin="5" Click="ApplyClicked"/>
         </Grid>
     </Grid>
 </Window>

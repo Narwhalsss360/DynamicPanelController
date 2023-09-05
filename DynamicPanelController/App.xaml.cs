@@ -15,18 +15,18 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
+using System.Collections.ObjectModel;
 
 namespace DynamicPanelController
 {
     public partial class App : Application
     {
-        public List<PanelProfile> Profiles = new();
+        public ObservableCollection<PanelProfile> Profiles = new();
         public int SelectedProfileIndex = -1;
 
         public List<Type> Actions = new();
         public List<Type> AbsoluteActions = new();
         public List<Type> Sources = new();
-
         public static readonly ushort PacketSize = 16;
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
 
@@ -104,7 +104,7 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now} Info:{Message}";
+                CurrentLog += $"{DateTime.Now:HH:mm} [Info] {Message}";
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
@@ -113,7 +113,7 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now} Warning:{Message}";
+                CurrentLog += $"{DateTime.Now:HH:mm} [Warning] {Message}";
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
@@ -122,7 +122,7 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now} Error:{Message}";
+                CurrentLog += $"{DateTime.Now:HH:mm} [Error] {Message}";
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
@@ -148,16 +148,22 @@ namespace DynamicPanelController
             SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
 
+        void ProfileRemoved(object? Sender, EventArgs Args)
+        {
+            if (Profiles.Count == 0)
+                Profiles.Add(new PanelProfile() { Name = "New Profile" });
+        }
+
         private void ApplicationStarting(object Sender, EventArgs Args)
         {
             Logger.Info("Program starting");
             LoadSettings();
-            SetProperty<PanelExtension.Extension>("Subscriber", (PanelExtensionSubscriber)SubscribePanelExtension);
-            SetProperty<PanelExtension.Extension>("Unsubscriber", (PanelExtensionUnsubscriber)UnsubscribePanelExtension);
+            SetProperty<Extension>("Subscriber", (PanelExtensionSubscriber)SubscribePanelExtension);
+            SetProperty<Extension>("Unsubscriber", (PanelExtensionUnsubscriber)UnsubscribePanelExtension);
 
             LoadExtensionsFromDirectory();
-            SetProperty<PanelExtension.Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
-            SetProperty<PanelExtension.Extension>("Refresher", (ExtensionRefresher)RefreshPanelExtension);
+            SetProperty<Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
+            SetProperty<Extension>("Refresher", (ExtensionRefresher)RefreshPanelExtension);
             LoadProfiles();
         }
 
@@ -188,20 +194,38 @@ namespace DynamicPanelController
             Type[]? Types;
             if (ModuleName is null)
             {
-                Types = AssemblyToLoad.GetTypes();
+                try
+                {
+                    Types = AssemblyToLoad.GetTypes();
+
+                }
+                catch (ReflectionTypeLoadException E)
+                {
+                    Logger.Error($"Couldn't load {AssemblyToLoad.FullName}. {E.Message}");
+                    return -1;
+                }
             }
             else
             {
-                Module? module = AssemblyToLoad.GetModule(ModuleName);
-                if (module is null)
+                Module? Module = AssemblyToLoad.GetModule(ModuleName);
+                if (Module is null)
+                    return -2;
+                try
+                {
+                    Types = Module.GetTypes();
+
+                }
+                catch (ReflectionTypeLoadException E)
+                {
+                    Logger.Error($"Couldn't load {Module.Name}. {E.Message}");
                     return -1;
-                Types = module.GetTypes();
+                }
             }
 
             if (Types is null)
             {
                 Logger.Error($"Couldn't load assembly {AssemblyToLoad.FullName}");
-                return -2;
+                return -3;
             }
 
             int ExtensionsLoaded = 0;
@@ -210,7 +234,18 @@ namespace DynamicPanelController
             {
                 foreach (Type Interface in Type.GetInterfaces())
                 {
-                    if (Interface == typeof(IPanelAction))
+                    if (Interface == typeof(IAbsolutePanelAction))
+                    {
+                        if (Type.GetCustomAttribute<PanelAbsoluteActionDescriptorAttribute>() is null)
+                        {
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelAbsoluteActionDescriptorAttribute.");
+                            continue;
+                        }
+                        AbsoluteActions.Add(Type);
+                        ExtensionsLoaded++;
+                        Logger.Info($"Loaded Absolute Action {Type.FullName}");
+                    }
+                    else if (Interface == typeof(IPanelAction))
                     {
                         if (Type.GetCustomAttribute<PanelActionDescriptorAttribute>() is null)
                         {
@@ -219,7 +254,7 @@ namespace DynamicPanelController
                         }
                         Actions.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Info($"Loaded {Type.FullName}");
+                        Logger.Info($"Loaded Action {Type.FullName}");
                     }
                     else if (Interface == typeof(IPanelSource))
                     {
@@ -230,7 +265,7 @@ namespace DynamicPanelController
                         }
                         Sources.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Info($"Loaded {Type.FullName}");
+                        Logger.Info($"Loaded Source {Type.FullName}");
                     }
                 }
             }
@@ -241,7 +276,7 @@ namespace DynamicPanelController
 
         private void LoadProfile(string Json)
         {
-            Profiles.Add(new PanelProfile(Json, Actions.ToArray(), Sources.ToArray()));
+            Profiles.Add(new PanelProfile(Json, Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray()));
         }
 
         private void LoadProfile(byte[] Bytes)
@@ -263,7 +298,7 @@ namespace DynamicPanelController
                 LoadProfile(FileBytes);
             }
             if (Profiles.Count == 0)
-                Profiles.Add(new PanelProfile() { Name = "Empty" });
+                Profiles.Add(new PanelProfile() { Name = "New Profile" });
         }
 
         private void LoadSettings()
@@ -288,7 +323,7 @@ namespace DynamicPanelController
                 Settings = new(Deserialized);
         }
 
-        private object? SubscribePanelExtension(PanelExtension.Extension Extension)
+        private object? SubscribePanelExtension(Extension Extension)
         {
             if (PanelExtensions.Contains(Extension))
                 return "Already subscribed.";
@@ -296,20 +331,20 @@ namespace DynamicPanelController
             return null;
         }
 
-        private void SetPanelExtensionVariables(PanelExtension.Extension Extension)
+        private void SetPanelExtensionVariables(Extension Extension)
         {
-            PanelExtension.Extension.ApplicationVariables Variables = new();
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("LastLoad", DateTime.Now, Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("Logger", Logger, Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("CurrentProfile", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("Profiles", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("Actions", Actions.ToArray(), Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
-            SetProperty<PanelExtension.Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
-            SetProperty<PanelExtension.Extension>("Application", Variables, Extension);
+            Extension.ApplicationVariables Variables = new();
+            SetProperty<Extension.ApplicationVariables>("LastLoad", DateTime.Now, Variables);
+            SetProperty<Extension.ApplicationVariables>("Logger", Logger, Variables);
+            SetProperty<Extension.ApplicationVariables>("CurrentProfile", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
+            SetProperty<Extension.ApplicationVariables>("Profiles", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
+            SetProperty<Extension.ApplicationVariables>("Actions", Actions.ToArray(), Variables);
+            SetProperty<Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
+            SetProperty<Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
+            SetProperty<Extension>("Application", Variables, Extension);
         }
 
-        private void RefreshPanelExtension(PanelExtension.Extension? Extension)
+        private void RefreshPanelExtension(Extension? Extension)
         {
             if (Extension is null)
                 PanelExtensions.ForEach(E => SetPanelExtensionVariables(E));
@@ -317,7 +352,7 @@ namespace DynamicPanelController
                 SetPanelExtensionVariables(Extension);
         }
 
-        private object? UnsubscribePanelExtension(PanelExtension.Extension Extension)
+        private object? UnsubscribePanelExtension(Extension Extension)
         {
             if (PanelExtensions.Contains(Extension))
                 return "Not subscribed.";
@@ -439,7 +474,7 @@ namespace DynamicPanelController
         {
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
-            PanelExtensions.ForEach(E => InvokeMethod<PanelExtension.Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
+            PanelExtensions.ForEach(E => InvokeMethod<Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
             Logger.Info("Program exiting...");
             SaveSettings();
             SaveProfiles();

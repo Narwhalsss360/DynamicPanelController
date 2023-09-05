@@ -2,7 +2,7 @@
 
 namespace IncludedExtensions.Volume
 {
-    [AbsolutePanelActionDescriptor("Set Volume")]
+    [PanelAbsoluteActionDescriptor("Set Volume")]
     internal class SetVolume : IAbsolutePanelAction
     {
         public object? Set(object? value)

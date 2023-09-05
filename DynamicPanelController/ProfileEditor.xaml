@@ -36,7 +36,7 @@
 
             <Button x:Name="AddOptionButton" Content="Add" Margin="5" IsEnabled="False" Click="AddOptionButtonClicked"/>
             <Button x:Name="RemoveOptionButton" Content="Remove" Margin="5" Grid.Column="1" IsEnabled="False" Click="RemoveOptionButtonClicked"/>
-            <ListBox x:Name="OptionsSelectorList" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" SelectionChanged="PanelItemOptionSelected"/>
+            <ListBox x:Name="OptionsSelectorList" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="5" SelectionChanged="PanelItemOptionSelected"/>
         </Grid>
 
         <Grid Grid.Row="2">
