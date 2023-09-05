@@ -16,7 +16,9 @@ namespace DynamicPanelController
         public PanelProfile EditiedVersion;
         private PanelDescriptorEditor? CustomDescriptorEditor = null;
         private bool PushedButtonSet = true;
-        public List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
+        private bool DontInstantiate = true;
+        private List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
+        int SelectedIndex = -1;
 
         private readonly Dictionary<string, string?> EnteredOptions = new();
 
@@ -32,7 +34,7 @@ namespace DynamicPanelController
             }
 
             Loaded += WindowLoaded;
-
+            this.SelectedIndex = SelectedIndex;
             EditiedVersion = App.Profiles[SelectedIndex];
             PanelProfileNameTextBlock.Text = EditiedVersion.Name;
         }
@@ -48,7 +50,7 @@ namespace DynamicPanelController
             }
         }
 
-        public void LoadDescriptor(PanelDescriptor? Descriptor)
+        private void LoadDescriptor(PanelDescriptor? Descriptor)
         {
             PanelDescriptor? DescriptorToLoad = Descriptor;
             _ = Descriptor ?? App.Settings.GlobalPanelDescriptor;
@@ -56,9 +58,6 @@ namespace DynamicPanelController
                 return;
 
             IOSelectorList.Items.Clear();
-
-            EditiedVersion.PanelDescriptor = DescriptorToLoad;
-
             for (int i = 0; i < DescriptorToLoad.ButtonCount; i++)
                 _ = IOSelectorList.Items.Add($"Button {i}");
 
@@ -69,11 +68,12 @@ namespace DynamicPanelController
                 _ = IOSelectorList.Items.Add($"Display {i}");
         }
 
-        public void IOSelected(object? Sender, EventArgs Args)
+        private void IOSelected(object? Sender, EventArgs Args)
         {
             if (IOSelectorList.SelectedIndex == -1)
                 return;
             PanelItemSelectorList.Items.Clear();
+            PanelItemSelectorList.SelectedIndex = -1;
             if (IOSelectorList.SelectedItem is not string Selection)
                 return;
 
@@ -97,26 +97,23 @@ namespace DynamicPanelController
                 foreach (var ActionType in App.Actions)
                     _ = PanelItemSelectorList.Items.Add(ActionType.GetPanelActionDescriptor()?.Name);
 
-                if (IsButton)
-                {
-                    if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is not ActionMapping Mapping)
-                        return;
+                if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is not ActionMapping Mapping)
+                    return;
 
-                    if (Mapping.Action.GetDescriptorAttribute()?.Name is string MappedActionName)
+                if (Mapping.Action.GetDescriptorAttribute()?.Name is string MappedActionName)
+                {
+                    for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
                     {
-                        for (int i = 0; i < PanelItemSelectorList.Items.Count; i++)
+                        if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
+                            continue;
+                        if (PanelListItemName == MappedActionName)
                         {
-                            if (PanelItemSelectorList.Items[i] is not string PanelListItemName)
-                                continue;
-                            if (PanelListItemName == MappedActionName)
-                            {
-                                PanelItemSelectorList.SelectedIndex = i;
-                                break;
-                            }
+                            DontInstantiate = true;
+                            PanelItemSelectorList.SelectedIndex = i;
+                            break;
                         }
                     }
                 }
-                
             }
             else if (IsAbsolute)
             {
@@ -133,6 +130,7 @@ namespace DynamicPanelController
                                 continue;
                             if (PanelListItemName == MappedAbsoluteActionName)
                             {
+                                DontInstantiate = true;
                                 PanelItemSelectorList.SelectedIndex = i;
                                 break;
                             }
@@ -155,21 +153,25 @@ namespace DynamicPanelController
                                 continue;
                             if (PanelListItemName == MappedSourceName)
                             {
+                                DontInstantiate = true;
                                 PanelItemSelectorList.SelectedIndex = i;
                                 break;
                             }
                         }
                     }
                 }
-                
             }
         }
 
-        public void PanelItemSelected(object? Sender, EventArgs Args)
+        private void PanelItemSelected(object? Sender, EventArgs Args)
         {
             OptionsListBoxItems.Clear();
+            OptionsSelectorList.Items.Refresh();
+            RemoveMappingButton.IsEnabled = false;
+            TypeNameTextBlock.Text = string.Empty;
             if (PanelItemSelectorList.SelectedIndex == -1)
                 return;
+            RemoveMappingButton.IsEnabled = true;
 
             PanelDescriptor? Descriptor = EditiedVersion.PanelDescriptor is not null ? EditiedVersion.PanelDescriptor : App.Settings.GlobalPanelDescriptor;
 
@@ -197,35 +199,48 @@ namespace DynamicPanelController
 
             if (IsButton)
             {
-                if (Activator.CreateInstance(ItemType) is not IPanelAction NewAction)
-                    return;
-                if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
-                    _ = EditiedVersion.ActionMappings.Remove(ActionMapping);
-                EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = NewAction });
-                LoadActionOptions(EditiedVersion.ActionMappings.Last().Action);
+                if (!DontInstantiate)
+                {
+                    if (Activator.CreateInstance(ItemType) is not IPanelAction NewAction)
+                        return;
+                    if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
+                        _ = EditiedVersion.ActionMappings.Remove(ActionMapping);
+                    EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = NewAction });
+                }
+                DontInstantiate = true;
+                LoadActionOptions(EditiedVersion.ActionMappings.Find(Action => Action.ID == ID)?.Action);
             }
             else if (IsAbsolute)
             {
-                if (Activator.CreateInstance(ItemType) is not IAbsolutePanelAction NewAbsoluteAction)
-                    return;
-                if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
-                    _ = EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
-                EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = NewAbsoluteAction });
-                LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Last().AbsoluteAction);
+                if (!DontInstantiate)
+                {
+                    if (Activator.CreateInstance(ItemType) is not IAbsolutePanelAction NewAbsoluteAction)
+                        return;
+                    if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
+                        _ = EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
+                    EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = NewAbsoluteAction });
+                }
+                DontInstantiate = true;
+                LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Find(AbsoluteAction => AbsoluteAction.ID == ID)?.AbsoluteAction);
             }
             else
             {
-                if (Activator.CreateInstance(ItemType) is not IPanelSource NewSource)
-                    return;
-                if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
-                    _ = EditiedVersion.SourceMappings.Remove(SourceMapping);
-                EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = NewSource });
-                LoadActionOptions(EditiedVersion.SourceMappings.Last().Source);
+                if (!DontInstantiate)
+                {
+                    if (Activator.CreateInstance(ItemType) is not IPanelSource NewSource)
+                        return;
+                    if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
+                        _ = EditiedVersion.SourceMappings.Remove(SourceMapping);
+                    EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = NewSource });
+                }
+                DontInstantiate = true;
+                LoadActionOptions(EditiedVersion.SourceMappings.Find(Source => Source.ID == ID)?.Source);
             }
-            OptionsSelectorList?.Items.Refresh();
+            TypeNameTextBlock.Text = ItemType.FullName;
+            OptionsSelectorList.Items.Refresh();
         }
 
-        public void PanelItemOptionSelected(object? Sender, EventArgs Args)
+        private void PanelItemOptionSelected(object? Sender, EventArgs Args)
         {
             if (OptionsSelectorList.SelectedIndex == -1)
             {
@@ -237,6 +252,36 @@ namespace DynamicPanelController
 
             if (!AllowsAnyKey)
                 return;
+        }
+
+        private void RemoveMappingClicked(object? Sender, EventArgs Args)
+        {
+            RemoveMappingButton.IsEnabled = false;
+            if (IOSelectorList.SelectedIndex == -1)
+                return;
+            PanelDescriptor? Descriptor = EditiedVersion.PanelDescriptor is not null ? EditiedVersion.PanelDescriptor : App.Settings.GlobalPanelDescriptor;
+
+            bool IsButton = IOSelectorList.SelectedIndex < Descriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= Descriptor?.ButtonCount + Descriptor?.AbsoluteCount;
+            bool IsAbsolute = !IsButton && !IsSource;
+
+            byte? ID = IsButton
+                ? (byte?)IOSelectorList.SelectedIndex
+                : IsSource
+                ? (byte?)(IOSelectorList.SelectedIndex - (Descriptor?.ButtonCount + Descriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - Descriptor?.ButtonCount);
+
+            if (ID is null)
+                return;
+
+            if (IsButton)
+                EditiedVersion.ActionMappings.RemoveAll(ActionMapping => ActionMapping.ID == ID);
+            else if (IsAbsolute)
+                EditiedVersion.AbsoluteActionMappings.RemoveAll(AbsoluteActionMapping => AbsoluteActionMapping.ID == ID);
+            else if (IsSource)
+                EditiedVersion.SourceMappings.RemoveAll(SourceMapping => SourceMapping.ID == ID);
+            PanelItemSelectorList.SelectedIndex = -1;
+            OptionsSelectorList.Items.Refresh();
         }
 
         private void UpdateEnteredOptions(object? Sender, EventArgs Args)
@@ -269,15 +314,18 @@ namespace DynamicPanelController
                 }
             }
 
-            bool IsButton = IOSelectorList.SelectedIndex < EditiedVersion.PanelDescriptor?.ButtonCount;
-            bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
+            PanelDescriptor? Descriptor = EditiedVersion.PanelDescriptor is not null ? EditiedVersion.PanelDescriptor : App.Settings.GlobalPanelDescriptor;
+
+            bool IsButton = IOSelectorList.SelectedIndex < Descriptor?.ButtonCount;
+            bool IsSource = IOSelectorList.SelectedIndex >= Descriptor?.ButtonCount + Descriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
             byte? ID = IsButton
                 ? (byte?)IOSelectorList.SelectedIndex
                 : IsSource
-                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
-                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
+                ? (byte?)(IOSelectorList.SelectedIndex - (Descriptor?.ButtonCount + Descriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - Descriptor.ButtonCount);
+
             if (ID is null)
                 return;
 
@@ -377,6 +425,8 @@ namespace DynamicPanelController
                             Left = LeftCombo.Text;
                         else if (OptionItem.Left is TextBox LeftTextBox)
                             Left = LeftTextBox.Text;
+                        else if (OptionItem.Left is TextBlock LeftTextBlock)
+                            Left = LeftTextBlock.Text;
                         else
                             continue;
 
@@ -397,7 +447,7 @@ namespace DynamicPanelController
                                 }
                             }
                         }
-                        else if (OptionItem.Left is TextBox RightTextBox)
+                        else if (OptionItem.Right is TextBox RightTextBox)
                             RightTextBox.Text = Options[Left];
                     }
                 }
@@ -493,6 +543,8 @@ namespace DynamicPanelController
         private void ApplyClicked(object? Sender, EventArgs Args)
         {
             EditiedVersion.Name = PanelProfileNameTextBlock.Text;
+            if (SelectedIndex == -1)
+                App.Profiles[SelectedIndex] = EditiedVersion;
         }
     }
 }

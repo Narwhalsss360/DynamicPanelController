@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DynamicPanelController"
         mc:Ignorable="d"
-        Title="ProfileEditor" Height="450" Width="800">
+        Title="ProfileEditor" Height="450" Width="800" MinWidth="620" MinHeight="220">
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="45" />
@@ -13,17 +13,28 @@
             <RowDefinition Height="45" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <TextBox x:Name="PanelProfileNameTextBlock" Grid.Row="0" Grid.Column="1" FontSize="25" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5" HorizontalContentAlignment="Center"/>
+        <TextBox x:Name="PanelProfileNameTextBlock" Grid.Row="0" Grid.ColumnSpan="2" FontSize="25" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5" HorizontalContentAlignment="Center"/>
 
         <Button x:Name="PanelDescriptorButton" Content="Panel Descriptor: Global" Grid.Column="2" Margin="5" Click="PanelDescriptorButtonClicked"/>
 
         <ListBox x:Name="IOSelectorList" SelectionMode="Single" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Margin="5" SelectionChanged="IOSelected"/>
-        <ListBox x:Name="PanelItemSelectorList" SelectionMode="Single" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" Margin="5" SelectionChanged="PanelItemSelected"/>
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition />
+                <RowDefinition Height="15"/>
+            </Grid.RowDefinitions>
+
+            <Button x:Name="RemoveMappingButton" Content="Remove" Margin="5" IsEnabled="False" Click="RemoveMappingClicked"/>
+            <ListBox x:Name="PanelItemSelectorList" SelectionMode="Single" Grid.Row="1" HorizontalAlignment="Stretch" Margin="5" SelectionChanged="PanelItemSelected"/>
+            <TextBlock x:Name="TypeNameTextBlock" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+        </Grid>
+
         <Grid Grid.Row="1" Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
@@ -44,18 +55,18 @@
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            
-            <Button x:Name="PushedButton" Content="Pushed" Margin="5" IsEnabled="True" Click="PushedButtonPushed" />
-            <Button x:Name="ReleasedButton" Grid.Column="1" Content="Released" Margin="5" IsEnabled="False" Click="ReleasedButtonPushed"/>
+
+            <Button x:Name="PushedButton" Content="Pushed" Margin="5" IsEnabled="False" Click="PushedButtonPushed" />
+            <Button x:Name="ReleasedButton" Grid.Column="1" Content="Released" Margin="5" IsEnabled="True" Click="ReleasedButtonPushed"/>
         </Grid>
-        
+
         <Grid Grid.Row="2" Grid.Column="2" >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            
+
             <Button x:Name="FinishButtonOK" Grid.Column="0" Content="OK" Margin="0, 5, 0, 5" Click="OKClicked"/>
             <Button x:Name="FinishButtonCancel" Grid.Column="1" Content="Cancel" Margin="5" Click="CancelClicked"/>
             <Button x:Name="FinishButtonApply" Grid.Column="2" Content="Apply" Margin="0, 5, 0, 5" Click="ApplyClicked"/>
