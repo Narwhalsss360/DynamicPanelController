@@ -1,6 +1,7 @@
 ﻿using Panel;
 using Panel.Communication;
 using Profiling.ProfilingTypes;
+using System;
 using System.Text.Json;
 
 namespace Profiling
@@ -30,28 +31,57 @@ namespace Profiling
             if (Serialized.PanelDescriptor is not null)
                 PanelDescriptor = new(Serialized.PanelDescriptor);
 
-            if (Serialized.ActionMappings is not null)
+            if (Serialized.PushedActionMappings is not null)
             {
-                foreach (var IDAction in Serialized.ActionMappings)
+                foreach (var IDAction in Serialized.PushedActionMappings)
                 {
-                    Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value[1]);
+                    Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value);
                     if (ExtensionType is null)
                         continue;
                     IPanelAction? Instance = Activator.CreateInstance(ExtensionType) as IPanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    ActionMappings.Add(new ActionMapping() { ID = IDAction.Key, UpdateState = IDAction.Value[0].ToButtonUpdateState(), Action = Instance });
+                    ActionMappings.Add(new ActionMapping() { ID = IDAction.Key, UpdateState = ButtonUpdateStates.Pushed, Action = Instance });
+
+                    if (Serialized.PushedActionMappingsOptions is not null)
+                        if (Serialized.PushedActionMappingsOptions.ContainsKey(IDAction.Key))
+                            if (Serialized.PushedActionMappingsOptions[IDAction.Key] is Dictionary<string, string?> Options)
+                                ActionMappings.Last().Action.SetOptions(Options);
                 }
             }
+
+            if (Serialized.ReleasedActionMappings is not null)
+            {
+                foreach (var IDAction in Serialized.ReleasedActionMappings)
+                {
+                    Type? ExtensionType = Array.Find(AvailableActions, Extension => Extension.FullName == IDAction.Value);
+                    if (ExtensionType is null)
+                        continue;
+                    IPanelAction? Instance = Activator.CreateInstance(ExtensionType) as IPanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
+                    ActionMappings.Add(new ActionMapping() { ID = IDAction.Key, UpdateState = ButtonUpdateStates.Released, Action = Instance });
+
+                    if (Serialized.ReleasedActionMappingsOptions is not null)
+                        if (Serialized.ReleasedActionMappingsOptions.ContainsKey(IDAction.Key))
+                            if (Serialized.ReleasedActionMappingsOptions[IDAction.Key] is Dictionary<string, string?> Options)
+                                ActionMappings.Last().Action.SetOptions(Options);
+                }
+            }
+
             if (Serialized.AbsoluteActionMappings is not null)
             {
-                foreach (var IDAction in Serialized.AbsoluteActionMappings)
+                foreach (var IDAbsoluteAction in Serialized.AbsoluteActionMappings)
                 {
-                    Type? ExtensionType = Array.Find(AvailableAbsoluteActions, Extension => Extension.FullName == IDAction.Value);
+                    Type? ExtensionType = Array.Find(AvailableAbsoluteActions, Extension => Extension.FullName == IDAbsoluteAction.Value);
                     if (ExtensionType is null)
                         continue;
                     IAbsolutePanelAction? Instance = Activator.CreateInstance(ExtensionType) as IAbsolutePanelAction ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
-                    AbsoluteActionMappings.Add(new AbsoluteActionMapping() { ID = IDAction.Key, AbsoluteAction = Instance });
+                    AbsoluteActionMappings.Add(new AbsoluteActionMapping() { ID = IDAbsoluteAction.Key, AbsoluteAction = Instance });
+
+                    if (Serialized.AbsoluteActionMappingsOptions is not null)
+                        if (Serialized.AbsoluteActionMappingsOptions.ContainsKey(IDAbsoluteAction.Key))
+                            if (Serialized.AbsoluteActionMappingsOptions[IDAbsoluteAction.Key] is Dictionary<string, string?> Options)
+                                AbsoluteActionMappings.Last().AbsoluteAction.SetOptions(Options);
                 }
             }
+
             if (Serialized.SourceMappings is not null)
             {
                 foreach (var IDSource in Serialized.SourceMappings)
@@ -61,6 +91,11 @@ namespace Profiling
                         continue;
                     IPanelSource? Instance = Activator.CreateInstance(ExtensionType) as IPanelSource ?? throw new PanelProfileException($"Couldn't create instance of type {ExtensionType.FullName}");
                     SourceMappings.Add(new SourceMapping() { ID = IDSource.Key, Source = Instance });
+
+                    if (Serialized.SourceMappingsOptions is not null)
+                        if (Serialized.SourceMappingsOptions.ContainsKey(IDSource.Key))
+                            if (Serialized.SourceMappingsOptions[IDSource.Key] is Dictionary<string, string?> Options)
+                                SourceMappings.Last().Source.SetOptions(Options);
                 }
             }
         }
@@ -73,11 +108,13 @@ namespace Profiling
         private class Serializable
         {
             public string? Name { get; set; } = null;
-            public Dictionary<byte, string[]>? ActionMappings { get; set; } = null;
+            public Dictionary<byte, string>? PushedActionMappings { get; set; } = null;
+            public Dictionary<byte, string>? ReleasedActionMappings { get; set; } = null;
             public Dictionary<byte, string>? AbsoluteActionMappings { get; set; } = null;
             public Dictionary<byte, string>? SourceMappings { get; set; } = null;
             public PanelDescriptor.Serializable? PanelDescriptor { get; set; } = null;
-            public Dictionary<byte, Dictionary<string, string?>?>? ActionMappingsOptions { get; set; } = null;
+            public Dictionary<byte, Dictionary<string, string?>?>? PushedActionMappingsOptions { get; set; } = null;
+            public Dictionary<byte, Dictionary<string, string?>?>? ReleasedActionMappingsOptions { get; set; } = null;
             public Dictionary<byte, Dictionary<string, string?>?>? AbsoluteActionMappingsOptions { get; set; } = null;
             public Dictionary<byte, Dictionary<string, string?>?>? SourceMappingsOptions { get; set; } = null;
 
@@ -92,13 +129,23 @@ namespace Profiling
                 if (Source.PanelDescriptor is not null)
                     PanelDescriptor = new PanelDescriptor.Serializable(Source.PanelDescriptor);
 
-                ActionMappings = new();
-                ActionMappingsOptions = new();
+                PushedActionMappings = new();
+                ReleasedActionMappings = new();
+                PushedActionMappingsOptions = new();
+                ReleasedActionMappingsOptions = new();
                 foreach (var IDAction in Source.ActionMappings)
                 {
                     string? ActionTypeName = (IDAction.Action.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
-                    ActionMappings.Add(IDAction.ID, new string[] { $"{IDAction.UpdateState}", ActionTypeName });
-                    ActionMappingsOptions.Add(IDAction.ID, IDAction.Action.GetOptions());
+                    if (IDAction.UpdateState == ButtonUpdateStates.Pushed)
+                    {
+                        PushedActionMappings.Add(IDAction.ID, ActionTypeName);
+                        PushedActionMappingsOptions.Add(IDAction.ID, IDAction.Action.GetOptions());
+                    }
+                    else
+                    {
+                        ReleasedActionMappings.Add(IDAction.ID, ActionTypeName);
+                        ReleasedActionMappingsOptions.Add(IDAction.ID, IDAction.Action.GetOptions());
+                    }
                 }
 
                 AbsoluteActionMappings = new();
