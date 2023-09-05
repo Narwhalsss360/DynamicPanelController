@@ -203,12 +203,12 @@ namespace DynamicPanelController
                 {
                     if (Activator.CreateInstance(ItemType) is not IPanelAction NewAction)
                         return;
-                    if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
+                    if (EditiedVersion.ActionMappings.Find(Action => Action.ID == ID && Action.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
                         _ = EditiedVersion.ActionMappings.Remove(ActionMapping);
                     EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = NewAction });
                 }
-                DontInstantiate = true;
-                LoadActionOptions(EditiedVersion.ActionMappings.Find(Action => Action.ID == ID)?.Action);
+                DontInstantiate = false;
+                LoadActionOptions(EditiedVersion.ActionMappings.Find(Action => Action.ID == ID && Action.UpdateState == PushedButtonSet.ToPushedButtonUpdateState())?.Action);
             }
             else if (IsAbsolute)
             {
@@ -216,11 +216,11 @@ namespace DynamicPanelController
                 {
                     if (Activator.CreateInstance(ItemType) is not IAbsolutePanelAction NewAbsoluteAction)
                         return;
-                    if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
+                    if (EditiedVersion.AbsoluteActionMappings.Find(AbsoluteAction => AbsoluteAction.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
                         _ = EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
                     EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = NewAbsoluteAction });
                 }
-                DontInstantiate = true;
+                DontInstantiate = false;
                 LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Find(AbsoluteAction => AbsoluteAction.ID == ID)?.AbsoluteAction);
             }
             else
@@ -229,11 +229,11 @@ namespace DynamicPanelController
                 {
                     if (Activator.CreateInstance(ItemType) is not IPanelSource NewSource)
                         return;
-                    if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
+                    if (EditiedVersion.SourceMappings.Find(Source => Source.ID == ID) is SourceMapping SourceMapping)
                         _ = EditiedVersion.SourceMappings.Remove(SourceMapping);
                     EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = NewSource });
                 }
-                DontInstantiate = true;
+                DontInstantiate = false;
                 LoadActionOptions(EditiedVersion.SourceMappings.Find(Source => Source.ID == ID)?.Source);
             }
             TypeNameTextBlock.Text = ItemType.FullName;
@@ -324,7 +324,7 @@ namespace DynamicPanelController
                 ? (byte?)IOSelectorList.SelectedIndex
                 : IsSource
                 ? (byte?)(IOSelectorList.SelectedIndex - (Descriptor?.ButtonCount + Descriptor?.AbsoluteCount))
-                : (byte?)(IOSelectorList.SelectedIndex - Descriptor.ButtonCount);
+                : (byte?)(IOSelectorList.SelectedIndex - Descriptor?.ButtonCount);
 
             if (ID is null)
                 return;
