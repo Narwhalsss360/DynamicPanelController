@@ -32,8 +32,9 @@ namespace DynamicPanelController
         public static readonly ushort PacketSize = 16;
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
 
-        private readonly Thread SendSourceMappingsThread;
+        private Thread SendSourceMappingsThread;
         private bool SuspendSendThread = false;
+        private bool ThreadRestartRequired = false;
         private readonly PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
@@ -281,7 +282,10 @@ namespace DynamicPanelController
 
         private void LoadProfile(string Json)
         {
-            Profiles.Add(new PanelProfile(Json, Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray()));
+            bool Result;
+            PanelProfile LoadedProfile = new(Json, Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray(), out Result);
+            if (Result)
+                Profiles.Add(LoadedProfile);
         }
 
         private void LoadProfile(byte[] Bytes)
@@ -369,6 +373,10 @@ namespace DynamicPanelController
 
         public void StartPortCommunication(bool Emulate = false)
         {
+            if (Communicating)
+                return;
+            Communicating = true;
+
             Emulating = Emulate;
             if (Emulate)
             {
@@ -382,7 +390,6 @@ namespace DynamicPanelController
             SuspendSendThread = false;
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
                 SendSourceMappingsThread.Start();
-            Communicating = true;
             CommunicationsStarted?.Invoke(this, new EventArgs());
         }
 
@@ -392,18 +399,26 @@ namespace DynamicPanelController
             {
                 if (Emulating)
                 {
-                    if (EmulatorDisplay is null)
-                        continue;
                     if (SelectedProfileIndex == -1 || Profiles.Count == 0)
                         continue;
 
                     foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
+                    {
                         if (SourceMapping.Source.GetSourceValue() is string OutString)
+                        {
+                            if (EmulatorDisplay is null)
+                            {
+                                StopPortCommunication();
+                                break;
+                            }
                             EmulatorDisplay(SourceMapping.ID, OutString);
+                                
+                            continue;
+                        }
+                    }
                 }
                 else
                 {
-
                     if (!Port.IsOpen)
                         continue;
                     if (SelectedProfileIndex == -1 || Profiles.Count == 0)
@@ -427,14 +442,22 @@ namespace DynamicPanelController
                         {
                             Logger.Error($"Device on port {Port.PortName} disconnected.");
                             StopPortCommunication();
+                            break;
                         }
                     }
                 }
+                Thread.Sleep(15);
             }
+            ThreadRestartRequired = true;
+            SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
 
         public void StopPortCommunication()
         {
+            if (!Communicating)
+                return;
+            Communicating = false;
+
             SuspendSendThread = true;
             if (Emulating)
             {
@@ -445,7 +468,6 @@ namespace DynamicPanelController
                 Logger.Info($"Stopping communications on port {Port.PortName}");
                 Port.Close();
             }
-            Communicating = false;
             CommunicationsStopped?.Invoke(this, new EventArgs());
         }
 
@@ -462,19 +484,37 @@ namespace DynamicPanelController
 
                     if (SelectedProfileIndex == -1)
                         return;
-                    if (Profiles[SelectedProfileIndex].ActionMappings.Find(Mapping => Mapping.ID == ID && Mapping.UpdateState == UpdateState) is not ActionMapping Mapping)
+                    if (Profiles[SelectedProfileIndex].ActionMappings.Find(Mapping => Mapping.ID == ID && Mapping.UpdateState == UpdateState) is not ActionMapping ActionMapping)
                         return;
 
-                    Logger.Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}.");
-                    object? Result = Mapping.Action.Do();
-                    if (Result is string ResultString)
-                        Logger.Warn($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}");
-                    else if (Result is Exception ResultException)
-                        Logger.Error($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {ResultException.Message}");
-                    else if (Result is not null)
-                        Logger.Warn($"{Mapping.Action.GetDescriptorAttribute()?.Name} -> {Result}");
+                    Logger.Info($"Doing action {ActionMapping.Action.GetDescriptorAttribute()?.Name}.");
+                    object? ActionResult = ActionMapping.Action.Do();
+                    if (ActionResult is string ResultString)
+                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}");
+                    else if (ActionResult is Exception ActionResultException)
+                        Logger.Error($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResultException.Message}");
+                    else if (ActionResult is not null)
+                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResult}");
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
+                    if (State is not double)
+                        return;
+
+                    double StateDouble = (double)State;
+
+                    if (SelectedProfileIndex == -1)
+                        return;
+                    if (Profiles[SelectedProfileIndex].AbsoluteActionMappings.Find(Mapping => Mapping.ID == ID) is not AbsoluteActionMapping AbsoluteActionMapping)
+                        return;
+
+                    Logger.Info($"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {StateDouble}");
+                    object? AbsoluteActionResult = AbsoluteActionMapping.AbsoluteAction.Set(StateDouble);
+                    if (AbsoluteActionResult is string AbsoluteResultString)
+                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultString}");
+                    else if (AbsoluteActionResult is Exception AbsoluteResultException)
+                        Logger.Error($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultException.Message}");
+                    else if (AbsoluteActionResult is not null)
+                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteActionResult}");
                     break;
                 default:
                     break;

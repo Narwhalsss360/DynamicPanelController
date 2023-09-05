@@ -1,6 +1,7 @@
 ﻿using PanelExtension;
 using Profiling;
 using System;
+using System.DirectoryServices;
 using System.IO.Ports;
 using System.Windows;
 
@@ -11,6 +12,8 @@ namespace DynamicPanelController
         private readonly App App = (App)Application.Current;
         private readonly ILogger Log = App.Logger;
         private ProfileEditor? EditorWindow = null;
+        private PanelEmulator? EmulatorWindow = null;
+        private bool DontCallToggle = false;
 
         private SettingsWindow? SettingsWindow { get; set; } = null;
 
@@ -22,6 +25,7 @@ namespace DynamicPanelController
             Loaded += WindowLoaded;
             Log.LogChanged += ApplicationLogChanged;
             App.CommunicationsStarted += SwapToggleConnectionButtonText;
+            App.CommunicationsStopped += (Sender, Args) => { EmulatorWindow?.Dispatcher.Invoke(EmulatorWindow.Close); };
             App.CommunicationsStopped += SwapToggleConnectionButtonText;
         }
 
@@ -34,23 +38,45 @@ namespace DynamicPanelController
 
         private void SwapToggleConnectionButtonText(object? Sender = null, EventArgs? Args = null)
         {
-            PortConnectionToggle.Content = App.Communicating ? "Disconnect" : "Connect";
+            PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = App.Communicating ? "Disconnect" : "Connect"; });
         }
 
-        private void ToggleConnection(object Sender, EventArgs Args)
+        private void ToggleConnection(object? Sender, EventArgs Args)
         {
             if (App.Communicating)
             {
                 PortSelection.IsEnabled = true;
+                if (EmulatorWindow is not null)
+                {
+                    DontCallToggle = true;
+                    EmulatorWindow.Close();
+                }
                 App.StopPortCommunication();
                 SwapToggleConnectionButtonText();
             }
             else
             {
                 PortSelection.IsEnabled = false;
-                App.StartPortCommunication(PortSelection.Text == "Emulator");
+                bool Emulate = PortSelection.Text == "Emulator";
+                App.StartPortCommunication(Emulate);
+                if (Emulate)
+                {
+                    EmulatorWindow = new();
+                    EmulatorWindow.Closed += EmulatorClosed;
+                    EmulatorWindow.Show();
+                }
                 SwapToggleConnectionButtonText();
             }
+        }
+
+        private void EmulatorClosed(object? Sender, EventArgs Args)
+        {
+            if (DontCallToggle)
+            {
+                DontCallToggle = false;
+                return;
+            }
+            ToggleConnection(Sender, Args);
         }
 
         private void LogBoxTextChanged(object Sender, EventArgs E)

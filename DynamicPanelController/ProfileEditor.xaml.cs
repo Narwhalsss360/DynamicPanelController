@@ -16,7 +16,7 @@ namespace DynamicPanelController
         public PanelProfile EditiedVersion;
         private PanelDescriptorEditor? CustomDescriptorEditor = null;
         private bool PushedButtonSet = true;
-        private bool DontInstantiate = true;
+        private bool DontInstantiate = false;
         private List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
         int SelectedIndex = -1;
 
@@ -223,7 +223,7 @@ namespace DynamicPanelController
                 DontInstantiate = false;
                 LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Find(AbsoluteAction => AbsoluteAction.ID == ID)?.AbsoluteAction);
             }
-            else
+            else if (IsSource)
             {
                 if (!DontInstantiate)
                 {

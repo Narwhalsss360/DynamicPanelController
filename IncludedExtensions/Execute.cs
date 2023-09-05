@@ -1,5 +1,7 @@
 ﻿using Profiling.ProfilingTypes;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace IncludedExtensions
 {
@@ -7,14 +9,7 @@ namespace IncludedExtensions
     public class Execute : PanelExtension.Extension, IPanelAction
     {
         private string? ProgramPath = null;
-        private Process? UserProcess = null;
         private Dictionary<string, string?> CurrentOptions = new();
-
-        public Execute()
-            : base()
-        {
-            Exit += ApplicationExiting;
-        }
 
         public string?[]?[]? ValidOptions()
         {
@@ -51,27 +46,29 @@ namespace IncludedExtensions
                 return null;
             }
 
-            UserProcess = Process.Start(ProgramPath);
-            UserProcess.Exited += UserProgramExitted;
-            Application?.Logger.Info($"Executed {UserProcess.ProcessName}  -> {ProgramPath}");
-            return null;
-        }
+            string? Caught = null;
 
-        private void UserProgramExitted(object? Sender, EventArgs Args)
-        {
-            if (UserProcess is null)
-                return;
+            try
+            {
+                Process.Start(ProgramPath);
 
-            Application?.Logger.Info($"{UserProcess.ProcessName} exited with code {UserProcess.ExitCode}.");
-            if (UserProcess.ExitCode != 0)
-                Application?.Logger.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
-            UserProcess = null;
-        }
+            }
+            catch (Win32Exception E)
+            {
+                Caught = E.Message;
+            }
+            catch (ObjectDisposedException E)
+            {
+                Caught = E.Message;
+            }
+            catch(FileNotFoundException E)
+            {
+                Caught= E.Message;
+            }
 
-        private void ApplicationExiting(object? Sender, EventArgs Args)
-        {
-            if (UserProcess is not null)
-                Application?.Logger.Warn("Exitting Controller while executed process has not exitted.");
+            if (Caught is not null)
+                Application?.Logger.Error($"An error occured trying to execute {ProgramPath}. {Caught}");
+            return Caught;
         }
     }
 }

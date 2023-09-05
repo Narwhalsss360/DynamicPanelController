@@ -22,11 +22,32 @@ namespace Profiling
         {
         }
 
-        public PanelProfile(string Json, Type[] AvailableActions, Type[] AvailableAbsoluteActions, Type[] AvailableSources)
+        public PanelProfile(string Json, Type[] AvailableActions, Type[] AvailableAbsoluteActions, Type[] AvailableSources, out bool Result)
         {
-            Serializable? Serialized = JsonSerializer.Deserialize<Serializable?>(Json) ?? throw new PanelProfileException("Couldn't serialize.");
-            if (Serialized.Name is not null)
-                Name = Serialized.Name;
+            Serializable? Serialized = null;
+            try
+            {
+                Serialized = JsonSerializer.Deserialize<Serializable?>(Json);
+            }
+            catch (JsonException)
+            {
+            }
+
+            if (Serialized is null)
+            {
+                Name = "New Profile";
+                Result = false;
+                return;
+            }
+
+            if (Serialized.Name is null)
+            {
+                Name = "New Profile";
+                Result = false;
+                return;
+            }
+
+            Name = Serialized.Name;
 
             if (Serialized.PanelDescriptor is not null)
                 PanelDescriptor = new(Serialized.PanelDescriptor);
@@ -98,6 +119,8 @@ namespace Profiling
                                 SourceMappings.Last().Source.SetOptions(Options);
                 }
             }
+
+            Result = true;
         }
 
         public string Serialize()
@@ -163,7 +186,7 @@ namespace Profiling
                 {
                     string? ActionTypeName = (IDSource.Source.GetType()?.FullName) ?? throw new PanelProfileException("Null ActionTypeName.");
                     SourceMappings.Add(IDSource.ID, ActionTypeName);
-                    AbsoluteActionMappingsOptions.Add(IDSource.ID, IDSource.Source.GetOptions());
+                    SourceMappingsOptions.Add(IDSource.ID, IDSource.Source.GetOptions());
                 }
             }
         }

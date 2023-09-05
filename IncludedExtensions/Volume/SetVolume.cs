@@ -9,7 +9,8 @@ namespace IncludedExtensions.Volume
         {
             float? TryFloat = value as float?;
             int? TryInt = value as int?;
-            double? CastedValue = TryInt is not null ? (double)TryInt : TryFloat is not null ? (double)TryFloat : value as int?;
+            double? CastedValue =
+                TryInt is not null ? (double)TryInt : TryFloat is not null ? (double)TryFloat : value as double?;
             if (CastedValue is null)
                 return null;
 
