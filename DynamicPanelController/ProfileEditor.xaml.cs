@@ -4,12 +4,9 @@ using Profiling;
 using Profiling.ProfilingTypes;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Net.Security;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Animation;
 
 namespace DynamicPanelController
 {
@@ -30,7 +27,7 @@ namespace DynamicPanelController
             InitializeComponent();
             if (SelectedIndex < 0)
             {
-                MessageBox.Show($"The editor window was opened without a selected profile. Stack trace:\n{ Environment.StackTrace }", "Opened incorrecty", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"The editor window was opened without a selected profile. Stack trace:\n{Environment.StackTrace}", "Opened incorrecty", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
 
@@ -206,7 +203,7 @@ namespace DynamicPanelController
             {
                 Dictionary<string, string?>? OptionsToSet = null;
                 if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
-                        EditiedVersion.ActionMappings.Remove(ActionMapping);
+                    EditiedVersion.ActionMappings.Remove(ActionMapping);
                 EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = (IPanelAction)Activator.CreateInstance(ItemType) });
                 LoadActionOptions(EditiedVersion.ActionMappings.Last().Action);
             }
@@ -397,7 +394,7 @@ namespace DynamicPanelController
                                     {
                                         RightCombo.SelectedIndex = i;
                                         break;
-                                    }    
+                                    }
                                 }
                             }
                         }

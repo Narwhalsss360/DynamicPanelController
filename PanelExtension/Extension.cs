@@ -5,7 +5,7 @@ namespace PanelExtension
 {
     public delegate int ExtensionLoader(Assembly AssemblyToLoad, string? ModuleName);
     public delegate void Refresher();
-    
+
     public class Extension
     {
         public static ExtensionLoader? ExtensionLoader { get; private set; } = null;

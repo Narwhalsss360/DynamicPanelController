@@ -1,20 +1,20 @@
-﻿using Profiling;
+﻿using NStreamCom;
+using Panel;
+using Panel.Communication;
+using PanelExtension;
+using Profiling;
+using Profiling.ProfilingTypes;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Windows;
-using PanelExtension;
-using Profiling.ProfilingTypes;
 using System.IO;
 using System.IO.Ports;
-using System.Threading;
-using System.Text;
-using NStreamCom;
-using System.Text.Json;
-using Panel.Communication;
 using System.Linq;
-using Panel;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Windows;
 
 namespace DynamicPanelController
 {
@@ -38,8 +38,8 @@ namespace DynamicPanelController
         public struct AppSettings
         {
             public string FilePath = $"{Environment.CurrentDirectory}\\Settings.json";
-            public string ExtensionsDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Extensions";
-            public string ProfilesDirectory { get; set; } = $"{ Environment.CurrentDirectory }\\Profiles";
+            public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
+            public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
             public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
             public PanelDescriptor? GlobalPanelDescriptor = null;
             public Dictionary<string, string> GlobalSettings = new();
@@ -156,7 +156,7 @@ namespace DynamicPanelController
 
             if (Types is null)
             {
-                Error($"Couldn't load assembly { AssemblyToLoad.FullName }");
+                Error($"Couldn't load assembly {AssemblyToLoad.FullName}");
                 return -2;
             }
 
@@ -170,28 +170,28 @@ namespace DynamicPanelController
                     {
                         if (Type.GetCustomAttribute<PanelActionDescriptorAttribute>() is null)
                         {
-                            Error($"Type { Type.FullName } from assembly { AssemblyToLoad.FullName } does not have PanelActionDescriptorAttribute.");
+                            Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.");
                             continue;
                         }
                         Actions.Add(Type);
                         ExtensionsLoaded++;
-                        Info($"Loaded { Type.FullName }");
+                        Info($"Loaded {Type.FullName}");
                     }
                     else if (Interface == typeof(IPanelSource))
                     {
                         if (Type.GetCustomAttribute<PanelSourceDescriptorAttribute>() is null)
                         {
-                            Error($"Type { Type.FullName } from assembly { AssemblyToLoad.FullName } does not have PanelSourceDescriptorAttribute.");
+                            Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.");
                             continue;
                         }
                         Sources.Add(Type);
                         ExtensionsLoaded++;
-                        Info($"Loaded { Type.FullName }");
+                        Info($"Loaded {Type.FullName}");
                     }
                 }
             }
             if (ExtensionsLoaded > 0)
-                Info($"Loaded { ExtensionsLoaded } from { AssemblyToLoad.FullName }");
+                Info($"Loaded {ExtensionsLoaded} from {AssemblyToLoad.FullName}");
             return ExtensionsLoaded;
         }
 
@@ -222,7 +222,7 @@ namespace DynamicPanelController
         {
             if (!File.Exists(Settings.FilePath))
             {
-                Error($"Could not find settings file @ { Settings.FilePath }");
+                Error($"Could not find settings file @ {Settings.FilePath}");
                 return;
             }
 
@@ -251,7 +251,7 @@ namespace DynamicPanelController
 
         public void StartPortCommunication()
         {
-            Info($"Starting communications on port { Port.PortName }");
+            Info($"Starting communications on port {Port.PortName}");
             Port.Open();
             SuspendSendThread = false;
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
@@ -287,7 +287,7 @@ namespace DynamicPanelController
                     }
                     catch (Exception)
                     {
-                        Error($"Device on port { Port.PortName } disconnected.");
+                        Error($"Device on port {Port.PortName} disconnected.");
                         StopPortCommunication();
                     }
                 }
@@ -321,7 +321,7 @@ namespace DynamicPanelController
                     byte InputID = ReceivedMessage.Data[InputIDIndex];
                     ButtonUpdateStates ButtonState = ReceivedMessage.Data[ButtonStateIndex].ToButtonUpdateState();
 
-                    Info($"Button { InputID } has been { ButtonState }");
+                    Info($"Button {InputID} has been {ButtonState}");
 
                     if (SelectedProfileIndex == -1)
                         break;
@@ -329,7 +329,7 @@ namespace DynamicPanelController
                     PanelProfile SelectedProfile = Profiles[SelectedProfileIndex];
                     if (SelectedProfile.ActionMappings.Find(A => A.ID == InputID && A.UpdateState == ButtonState) is not ActionMapping Mapping)
                         return;
-                    Info($"Doing action { Mapping.Action.GetDescriptorAttribute()?.Name }");
+                    Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}");
                     Mapping.Action.Do();
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
@@ -381,7 +381,7 @@ namespace DynamicPanelController
             if (CurrentLog.Length > 0)
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
-            CurrentLog += $"{ DateTime.Now } Info:{ Message }";
+            CurrentLog += $"{DateTime.Now} Info:{Message}";
             LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
@@ -390,7 +390,7 @@ namespace DynamicPanelController
             if (CurrentLog.Length > 0)
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
-            CurrentLog += $"{ DateTime.Now } Warning:{ Message }";
+            CurrentLog += $"{DateTime.Now} Warning:{Message}";
             LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
@@ -399,11 +399,11 @@ namespace DynamicPanelController
             if (CurrentLog.Length > 0)
                 if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
                     CurrentLog += '\n';
-            CurrentLog += $"{ DateTime.Now } Error:{ Message }";
+            CurrentLog += $"{DateTime.Now} Error:{Message}";
             LogChangedHandlers?.Invoke(this, new EventArgs());
         }
 
-        public void OnLogChange(EventHandler Handler) => LogChangedHandlers += Handler;   
+        public void OnLogChange(EventHandler Handler) => LogChangedHandlers += Handler;
 
         public void RemoveOnLogChange(EventHandler Handler) => LogChangedHandlers -= Handler;
 

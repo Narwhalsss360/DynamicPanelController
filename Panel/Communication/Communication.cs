@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Panel.Communication
+﻿namespace Panel.Communication
 {
     public enum MessageReceiveIDs : ushort
     {
@@ -51,7 +49,7 @@ namespace Panel.Communication
             else return ButtonUpdateStates.Released;
         }
 
-        public static ButtonUpdateStates ToPushedButtonUpdateState(this bool  State) => State ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
+        public static ButtonUpdateStates ToPushedButtonUpdateState(this bool State) => State ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
 
         public static string ToString(this DisplayTypes Type)
         {

@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Profiling.ProfilingTypes
+﻿namespace Profiling.ProfilingTypes
 {
     public class Mapping
     {
@@ -9,6 +7,6 @@ namespace Profiling.ProfilingTypes
 
     public static class MappingExtensions
     {
-        public static TMapping? GetMappingFromID<TMapping>(this TMapping[] Mappings, byte ID) where TMapping: Mapping => Array.Find(Mappings, Mapping => Mapping.ID == ID);
+        public static TMapping? GetMappingFromID<TMapping>(this TMapping[] Mappings, byte ID) where TMapping : Mapping => Array.Find(Mappings, Mapping => Mapping.ID == ID);
     }
 }

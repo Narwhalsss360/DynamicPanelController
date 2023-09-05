@@ -37,13 +37,13 @@ namespace IncludedExtensions
 
             if (!File.Exists(ProgramPath))
             {
-                Extension.Logger?.Error($"\"{ ProgramPath }\" Doesn't exist.");
+                Extension.Logger?.Error($"\"{ProgramPath}\" Doesn't exist.");
                 return null;
             }
 
             UserProcess = Process.Start(ProgramPath);
             UserProcess.Exited += UserProgramExitted;
-            Extension.Logger?.Info($"Executed { UserProcess.ProcessName }  -> { ProgramPath }");
+            Extension.Logger?.Info($"Executed {UserProcess.ProcessName}  -> {ProgramPath}");
 
             return null;
         }
@@ -53,9 +53,9 @@ namespace IncludedExtensions
             if (UserProcess is null)
                 return;
 
-            Extension.Logger?.Info($"{ UserProcess.ProcessName } exited with code { UserProcess.ExitCode }.");
+            Extension.Logger?.Info($"{UserProcess.ProcessName} exited with code {UserProcess.ExitCode}.");
             if (UserProcess.ExitCode != 0)
-                Extension.Logger?.Warn($"Non-zero exit. { UserProcess.StandardError.ReadToEnd() }");
+                Extension.Logger?.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
             UserProcess = null;
         }
     }

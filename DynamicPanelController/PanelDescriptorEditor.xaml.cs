@@ -2,10 +2,8 @@
 using Panel.Communication;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Animation;
 
 namespace DynamicPanelController
 {
@@ -77,8 +75,6 @@ namespace DynamicPanelController
 
         public void DisplayCountChanged(object? Sender, EventArgs Args)
         {
-            if (string.IsNullOrEmpty(DisplayCountEntry.Text))
-                return;
             UpdateDisplayDescriptor();
         }
 
@@ -145,15 +141,12 @@ namespace DynamicPanelController
 
         string? CheckValid()
         {
-            byte ButtonCount;
-            if (!byte.TryParse(ButtonCountEntry.Text, out ButtonCount))
-                ButtonCount = 0;
-            byte AbsoluteCount;
-            if (!byte.TryParse(AbsoluteCountEntry.Text, out AbsoluteCount))
-                AbsoluteCount = 0;
-            byte DisplayCount;
-            if (!byte.TryParse(DisplayCountEntry.Text, out DisplayCount))
-                DisplayCount = 0;
+            if (!byte.TryParse(ButtonCountEntry.Text, out byte ButtonCount))
+                return "Button count is not a number from 0 -> 255.";
+            if (!byte.TryParse(AbsoluteCountEntry.Text, out byte AbsoluteCount))
+                return "Absolute count is not a number from 0 -> 255.";
+            if (!byte.TryParse(DisplayCountEntry.Text, out byte DisplayCount))
+                return "Display count is not a number from 0 -> 255.";
 
             Descriptor ??= new();
 

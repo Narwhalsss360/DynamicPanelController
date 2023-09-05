@@ -18,7 +18,7 @@ namespace DynamicPanelController
             EditedSettings = SettingsTemplate ?? new App.AppSettings();
             Loaded += WindowLoaded;
             foreach (var Pair in EditedSettings.GlobalSettings)
-                Options.Add(new() { Owner=EditedSettings.GlobalSettings, ThisKey=Pair.Key, ThisValue=Pair.Value });
+                Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = Pair.Key, ThisValue = Pair.Value });
         }
 
         string? VerifyValid()
@@ -72,9 +72,9 @@ namespace DynamicPanelController
             string KeyName = "New Key";
             for (int i = 1; EditedSettings.GlobalSettings.ContainsKey(KeyName); i++)
                 KeyName = $"New Key({i})";
-                
+
             EditedSettings.GlobalSettings.Add(KeyName, "New Value");
-            Options.Add(new() { Owner=EditedSettings.GlobalSettings, ThisKey = KeyName, ThisValue = "New Value" });
+            Options.Add(new() { Owner = EditedSettings.GlobalSettings, ThisKey = KeyName, ThisValue = "New Value" });
             GlobalOptionsPanel.Items.Refresh();
         }
 

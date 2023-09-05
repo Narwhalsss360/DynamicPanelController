@@ -1,5 +1,5 @@
-﻿using Profiling.ProfilingTypes;
-using PanelExtension;
+﻿using PanelExtension;
+using Profiling.ProfilingTypes;
 
 namespace IncludedExtensions.Tests
 {

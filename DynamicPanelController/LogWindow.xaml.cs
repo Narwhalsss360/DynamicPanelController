@@ -1,8 +1,6 @@
 ﻿using PanelExtension;
 using System;
-using System.DirectoryServices;
 using System.IO.Ports;
-using System.Linq;
 using System.Windows;
 
 namespace DynamicPanelController

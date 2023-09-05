@@ -8,9 +8,11 @@ namespace Profiling
     public class PanelProfile
     {
         public string Name { get; set; } = string.Empty;
-        public PanelDescriptor? PanelDescriptor {
+        public PanelDescriptor? PanelDescriptor
+        {
             get;
-            set; } = null;
+            set;
+        } = null;
         public List<ActionMapping> ActionMappings { get; set; } = new();
         public List<AbsoluteActionMapping> AbsoluteActionMappings { get; set; } = new();
         public List<SourceMapping> SourceMappings { get; set; } = new();
@@ -63,7 +65,7 @@ namespace Profiling
             }
         }
 
-        public string Serialize() => JsonSerializer.Serialize(new Serializable(this), options: new JsonSerializerOptions() {  WriteIndented = true });
+        public string Serialize() => JsonSerializer.Serialize(new Serializable(this), options: new JsonSerializerOptions() { WriteIndented = true });
 
         class Serializable
         {
