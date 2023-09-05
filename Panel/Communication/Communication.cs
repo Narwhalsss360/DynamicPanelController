@@ -27,11 +27,20 @@
 
     public static class EnumExtensions
     {
-        public static MessageReceiveIDs ToReceiveID(this ushort ID) => (MessageReceiveIDs)ID;
+        public static MessageReceiveIDs ToReceiveID(this ushort ID)
+        {
+            return (MessageReceiveIDs)ID;
+        }
 
-        public static byte ToByte(this ButtonUpdateStates State) => (byte)State;
+        public static byte ToByte(this ButtonUpdateStates State)
+        {
+            return (byte)State;
+        }
 
-        public static ButtonUpdateStates ToButtonUpdateState(this byte State) => (ButtonUpdateStates)State;
+        public static ButtonUpdateStates ToButtonUpdateState(this byte State)
+        {
+            return (ButtonUpdateStates)State;
+        }
 
         public static string ToString(this ButtonUpdateStates State)
         {
@@ -45,11 +54,13 @@
 
         public static ButtonUpdateStates ToButtonUpdateState(this string State)
         {
-            if (State == "Pushed") return ButtonUpdateStates.Pushed;
-            else return ButtonUpdateStates.Released;
+            return State == "Pushed" ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
         }
 
-        public static ButtonUpdateStates ToPushedButtonUpdateState(this bool State) => State ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
+        public static ButtonUpdateStates ToPushedButtonUpdateState(this bool State)
+        {
+            return State ? ButtonUpdateStates.Pushed : ButtonUpdateStates.Released;
+        }
 
         public static string ToString(this DisplayTypes Type)
         {
@@ -63,9 +74,7 @@
 
         public static DisplayTypes? ToDisplayType(this string State)
         {
-            if (State == "RowColumn") return DisplayTypes.RowColumn;
-            else if (State == "SevenSegment") return DisplayTypes.SevenSegment;
-            else return null;
+            return State == "RowColumn" ? DisplayTypes.RowColumn : State == "SevenSegment" ? DisplayTypes.SevenSegment : null;
         }
     }
 }

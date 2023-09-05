@@ -7,7 +7,10 @@ namespace Profiling.ProfilingTypes
     {
         public string Name;
 
-        public PanelSourceDescriptorAttribute(string Name) => this.Name = Name;
+        public PanelSourceDescriptorAttribute(string Name)
+        {
+            this.Name = Name;
+        }
     }
 
     public interface IPanelSource : IPanelItem
@@ -17,6 +20,9 @@ namespace Profiling.ProfilingTypes
 
     public static class PanelSourceExtensions
     {
-        public static PanelSourceDescriptorAttribute? GetDescriptorAttribute(this IPanelSource Source) => Source.GetType().GetCustomAttribute<PanelSourceDescriptorAttribute>();
+        public static PanelSourceDescriptorAttribute? GetDescriptorAttribute(this IPanelSource Source)
+        {
+            return Source.GetType().GetCustomAttribute<PanelSourceDescriptorAttribute>();
+        }
     }
 }

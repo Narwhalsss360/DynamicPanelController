@@ -10,17 +10,17 @@ namespace PanelExtension
 
     public class Extension
     {
-        static PanelExtensionSubscriber? Subscriber { get; set; }
-        static PanelExtensionUnsubscriber? Unsubscriber { get; set; }
-        static ExtensionLoader? ExtensionLoader { get; set; }
-        static ExtensionRefresher? Refresher { get; set; }
+        private static PanelExtensionSubscriber? Subscriber { get; set; }
+        private static PanelExtensionUnsubscriber? Unsubscriber { get; set; }
+        private static ExtensionLoader? ExtensionLoader { get; set; }
+        private static ExtensionRefresher? Refresher { get; set; }
         public bool ExtensionSubscribed { get; private set; } = false;
         public object? ExtensionSubscriptionResult { get; private set; } = null;
         public event EventHandler? Exit;
 
         public class ApplicationVariables
         {
-            class DeadLog : ILogger
+            private class DeadLog : ILogger
             {
                 public event EventHandler? LogChanged;
 
@@ -56,7 +56,7 @@ namespace PanelExtension
             }
         }
 
-        ApplicationVariables? InnerApplication { get; set; } = null;
+        private ApplicationVariables? InnerApplication { get; set; } = null;
 
         public ApplicationVariables? Application
         {
@@ -65,22 +65,19 @@ namespace PanelExtension
                 RefreshApplicationVariables();
                 return InnerApplication;
             }
-            private set
-            {
-                InnerApplication = value;
-            }
+            private set => InnerApplication = value;
         }
 
         public Extension()
         {
-            TrySubscribe();
+            _ = TrySubscribe();
         }
 
         public Extension(bool Subscribe)
         {
             Application = new();
             if (Subscribe)
-                TrySubscribe();
+                _ = TrySubscribe();
         }
 
         protected object? TrySubscribe()
@@ -95,13 +92,14 @@ namespace PanelExtension
             return ExtensionSubscriptionResult;
         }
 
-        protected void RefreshApplicationVariables() => Refresher?.Invoke(this);
+        protected void RefreshApplicationVariables()
+        {
+            Refresher?.Invoke(this);
+        }
 
         public static int RequestLoad(Assembly AssemblyToLoad, string? ModuleName = null)
         {
-            if (ExtensionLoader is null)
-                return int.MinValue;
-            return ExtensionLoader(AssemblyToLoad, ModuleName);
+            return ExtensionLoader is null ? int.MinValue : ExtensionLoader(AssemblyToLoad, ModuleName);
         }
 
         protected object? TryUnsubscribe()
@@ -116,7 +114,10 @@ namespace PanelExtension
             return ExtensionSubscriptionResult;
         }
 
-        private void ApplicationExiting(object? Sender, EventArgs Args) => Exit?.Invoke(Sender, Args);
+        private void ApplicationExiting(object? Sender, EventArgs Args)
+        {
+            Exit?.Invoke(Sender, Args);
+        }
 
         ~Extension()
         {

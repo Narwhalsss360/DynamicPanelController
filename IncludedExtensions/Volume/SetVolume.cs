@@ -9,19 +9,11 @@ namespace IncludedExtensions.Volume
         {
             float? TryFloat = value as float?;
             int? TryInt = value as int?;
-            double? CastedValue;
-
-            if (TryInt is not null)
-                CastedValue = (double)TryInt;
-            else if (TryFloat is not null)
-                CastedValue = (double)TryFloat;
-            else
-                CastedValue = value as int?;
-
+            double? CastedValue = TryInt is not null ? (double)TryInt : TryFloat is not null ? (double)TryFloat : value as int?;
             if (CastedValue is null)
                 return null;
 
-            if (0 <= CastedValue && CastedValue <= 100)
+            if (CastedValue is >= 0 and <= 100)
                 Volume.Controller.DefaultPlaybackDevice.Volume = (double)CastedValue;
             return null;
         }

@@ -4,16 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Xml.Linq;
 
 namespace DynamicPanelController
 {
     public partial class PanelDescriptorEditor : Window
     {
         public PanelDescriptor? Descriptor = null;
-        readonly List<DisplayDescriptorContentGrid> UIDisplayDescriptors = new();
-        readonly List<byte> DisplayTypesList = new();
-        readonly List<object> DisplayDescriptors = new();
+        private readonly List<DisplayDescriptorContentGrid> UIDisplayDescriptors = new();
+        private readonly List<byte> DisplayTypesList = new();
+        private readonly List<object> DisplayDescriptors = new();
 
         public PanelDescriptorEditor(PanelDescriptor? Template = null, bool GlobalAvailable = false)
         {
@@ -38,7 +37,7 @@ namespace DynamicPanelController
         {
             if (!byte.TryParse(DisplayCountEntry.Text, out byte DisplayCount))
             {
-                MessageBox.Show("Display count is not a number from 0 -> 255.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show("Display count is not a number from 0 -> 255.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -65,7 +64,7 @@ namespace DynamicPanelController
             }
             DisplayDescriptorStackPanel.Children.Clear();
             for (int i = 0; i < DisplayCount; i++)
-                DisplayDescriptorStackPanel.Children.Add(UIDisplayDescriptors[i]);
+                _ = DisplayDescriptorStackPanel.Children.Add(UIDisplayDescriptors[i]);
             if (Descriptor is null)
                 return;
             if (Descriptor.DisplayTypes is null)
@@ -84,7 +83,7 @@ namespace DynamicPanelController
             UpdateDisplayDescriptor();
         }
 
-        void RowColumnSelected(object? Sender, EventArgs Args)
+        private void RowColumnSelected(object? Sender, EventArgs Args)
         {
             if (Sender is not DisplayDescriptorContentGrid ThisDescriptor)
                 return;
@@ -111,11 +110,11 @@ namespace DynamicPanelController
                 if (byte.TryParse((ThisDescriptor.Elements?[3] as TextBox)?.Text, out byte Out))
                     if (ThisDescriptor.Context is byte[] Context)
                         if (ThisDescriptor.Elements?[1] is ComboBox Combo1)
-                    Context[Combo1.SelectedIndex] = Out;
+                            Context[Combo1.SelectedIndex] = Out;
             }
         }
 
-        void DisplayDescriptorTypeChanged(object? Sender, EventArgs Args)
+        private void DisplayDescriptorTypeChanged(object? Sender, EventArgs Args)
         {
             if (Sender is not DisplayDescriptorContentGrid ThisDescriptor)
                 return;
@@ -137,7 +136,7 @@ namespace DynamicPanelController
                     if (ThisDescriptor.Elements[3] is TextBox Text3Inner)
                         Text3Inner.TextChanged += (Sender, Args) => { ThisDescriptor.CallEvent((object)EntryTextChanged, null, Args); };
                     if (ThisDescriptor.CustomEvents.ContainsKey((object)RowColumnSelected))
-                        ThisDescriptor.CustomEvents.Remove((object)RowColumnSelected);
+                        _ = ThisDescriptor.CustomEvents.Remove((object)RowColumnSelected);
                     ThisDescriptor.Context = new byte();
                     break;
                 default:
@@ -148,7 +147,7 @@ namespace DynamicPanelController
             ThisDescriptor.Update();
         }
 
-        string? CheckValid()
+        private string? CheckValid()
         {
             if (!byte.TryParse(ButtonCountEntry.Text, out byte ButtonCount))
                 return "Button count is not a number from 0 -> 255.";
@@ -189,22 +188,22 @@ namespace DynamicPanelController
             return null;
         }
 
-        void GlobalClicked(object? Sender, EventArgs Args)
+        private void GlobalClicked(object? Sender, EventArgs Args)
         {
             Descriptor = null;
             Close();
         }
 
-        void CancelClicked(object? Sender, EventArgs Args)
+        private void CancelClicked(object? Sender, EventArgs Args)
         {
             Close();
         }
 
-        void ApplyClicked(object? Sender, EventArgs Args)
+        private void ApplyClicked(object? Sender, EventArgs Args)
         {
             if (CheckValid() is string ErrorMessage)
             {
-                MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             Close();

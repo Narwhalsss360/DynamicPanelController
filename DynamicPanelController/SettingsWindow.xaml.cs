@@ -7,8 +7,10 @@ namespace DynamicPanelController
     public partial class SettingsWindow : Window
     {
         public App.AppSettings EditedSettings;
-        List<BindableDictionaryPair> Options { get; set; } = new();
-        PanelDescriptorEditor? DescriptorEditor;
+
+        private List<BindableDictionaryPair> Options { get; set; } = new();
+
+        private PanelDescriptorEditor? DescriptorEditor;
         public bool Validated = false;
 
         public SettingsWindow(App.AppSettings? SettingsTemplate = null)
@@ -20,7 +22,7 @@ namespace DynamicPanelController
                 Options.Add(new(EditedSettings.GlobalSettings, Pair.Key, Pair.Value));
         }
 
-        string? VerifyValid()
+        private string? VerifyValid()
         {
             EditedSettings.ExtensionsDirectory = ExtensionsDirectoryEntry.Text;
             EditedSettings.ProfilesDirectory = ProfilesDirectoryEntry.Text;
@@ -29,39 +31,42 @@ namespace DynamicPanelController
             return null;
         }
 
-        void OKClicked(object? Sender, EventArgs Args)
+        private void OKClicked(object? Sender, EventArgs Args)
         {
             if (VerifyValid() is string ErrorMessage)
             {
-                MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
         }
 
-        void CancelClicked(object? Sender, EventArgs Args)
+        private void CancelClicked(object? Sender, EventArgs Args)
         {
             Validated = false;
             Close();
         }
 
-        void ApplyClicked(object? Sender, EventArgs Args)
+        private void ApplyClicked(object? Sender, EventArgs Args)
         {
             if (VerifyValid() is string ErrorMessage)
             {
-                MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             Close();
         }
 
-        private void GlobalOptionSelected(object? Sender, EventArgs Args) => RemoveOptionButton.IsEnabled = GlobalOptionsPanel.SelectedIndex >= 0;
+        private void GlobalOptionSelected(object? Sender, EventArgs Args)
+        {
+            RemoveOptionButton.IsEnabled = GlobalOptionsPanel.SelectedIndex >= 0;
+        }
 
         private void RemoveButtonClicked(object? Sender, EventArgs Args)
         {
             if (GlobalOptionsPanel.SelectedIndex == -1)
                 return;
             if (EditedSettings.GlobalSettings.ContainsKey(Options[GlobalOptionsPanel.SelectedIndex].Key))
-                EditedSettings.GlobalSettings.Remove(Options[GlobalOptionsPanel.SelectedIndex].Key);
+                _ = EditedSettings.GlobalSettings.Remove(Options[GlobalOptionsPanel.SelectedIndex].Key);
             Options.RemoveAt(GlobalOptionsPanel.SelectedIndex);
             GlobalOptionsPanel.Items.Refresh();
         }
@@ -105,18 +110,15 @@ namespace DynamicPanelController
         }
     }
 
-    class BindableDictionaryPair
+    internal class BindableDictionaryPair
     {
         public Dictionary<string, string>? Owner;
-        string ThisKey;
-        string ThisValue;
+        private string ThisKey;
+        private string ThisValue;
 
         public string Key
         {
-            get
-            {
-                return ThisKey;
-            }
+            get => ThisKey;
             set
             {
                 if (Owner is null)
@@ -129,17 +131,14 @@ namespace DynamicPanelController
                         return;
                 if (Owner is not null)
                     if (Owner.ContainsKey(ThisKey))
-                        Owner.Remove(ThisKey);
+                        _ = Owner.Remove(ThisKey);
                 ThisKey = value;
                 Owner?.Add(ThisKey, ThisValue);
             }
         }
         public string Value
         {
-            get
-            {
-                return ThisValue;
-            }
+            get => ThisValue;
             set
             {
                 if (Owner is null)
@@ -149,7 +148,7 @@ namespace DynamicPanelController
                 }
                 if (Owner is not null)
                     if (Owner.ContainsKey(ThisKey))
-                        Owner.Remove(ThisKey);
+                        _ = Owner.Remove(ThisKey);
                 ThisValue = value;
                 Owner?.Add(ThisKey, ThisValue);
             }

@@ -6,18 +6,24 @@ namespace IncludedExtensions
     [PanelActionDescriptor("Execute")]
     public class Execute : PanelExtension.Extension, IPanelAction
     {
-        string? ProgramPath = null;
-        Process? UserProcess = null;
-        Dictionary<string, string?> CurrentOptions = new();
+        private string? ProgramPath = null;
+        private Process? UserProcess = null;
+        private Dictionary<string, string?> CurrentOptions = new();
 
         public Execute()
             : base()
         {
         }
 
-        public string?[]?[]? ValidOptions() => new string?[]?[] { new string?[] { "Path", null } };
+        public string?[]?[]? ValidOptions()
+        {
+            return new string?[]?[] { new string?[] { "Path", null } };
+        }
 
-        public Dictionary<string, string?>? GetOptions() => CurrentOptions;
+        public Dictionary<string, string?>? GetOptions()
+        {
+            return CurrentOptions;
+        }
 
         public string? SetOptions(Dictionary<string, string?> Options)
         {
@@ -50,7 +56,7 @@ namespace IncludedExtensions
             return null;
         }
 
-        void UserProgramExitted(object? Sender, EventArgs Args)
+        private void UserProgramExitted(object? Sender, EventArgs Args)
         {
             if (UserProcess is null)
                 return;

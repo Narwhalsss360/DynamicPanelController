@@ -6,16 +6,25 @@ namespace Profiling.ProfilingTypes
     {
         public string Name;
 
-        public PanelActionDescriptorAttribute(string Name) => this.Name = Name;
+        public PanelActionDescriptorAttribute(string Name)
+        {
+            this.Name = Name;
+        }
     }
 
     public interface IPanelAction : IPanelItem
     {
-        object? Do(object? Arguments = null) => null;
+        object? Do(object? Arguments = null)
+        {
+            return null;
+        }
     }
 
     public static class PanelActionExtensions
     {
-        public static PanelActionDescriptorAttribute? GetDescriptorAttribute(this IPanelAction Action) => Action.GetType().GetCustomAttribute<PanelActionDescriptorAttribute>();
+        public static PanelActionDescriptorAttribute? GetDescriptorAttribute(this IPanelAction Action)
+        {
+            return Action.GetType().GetCustomAttribute<PanelActionDescriptorAttribute>();
+        }
     }
 }

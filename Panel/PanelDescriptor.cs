@@ -60,7 +60,7 @@ namespace Panel
                     {
                         DisplayDescriptor[i] = new int[Descriptor.DisplayDescriptor[i].Length];
                         for (int i2 = 0; i2 < Descriptor.DisplayDescriptor[i].Length; i2++)
-                            DisplayDescriptor[i][i2] = (int)Descriptor.DisplayDescriptor[i][i2];
+                            DisplayDescriptor[i][i2] = Descriptor.DisplayDescriptor[i][i2];
                     }
                 }
                 ButtonCount = Descriptor.ButtonCount;

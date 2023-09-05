@@ -16,6 +16,9 @@ namespace Profiling.ProfilingTypes
 
     public static class AbsolutePanelActionExtensions
     {
-        public static AbsolutePanelActionDescriptorAttribute? GetDescriptorAttribute(this IAbsolutePanelAction Action) => Action.GetType().GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
+        public static AbsolutePanelActionDescriptorAttribute? GetDescriptorAttribute(this IAbsolutePanelAction Action)
+        {
+            return Action.GetType().GetCustomAttribute<AbsolutePanelActionDescriptorAttribute>();
+        }
     }
 }

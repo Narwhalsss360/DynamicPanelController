@@ -8,9 +8,10 @@ namespace DynamicPanelController
     public partial class LogWindow : Window
     {
         private readonly App App = (App)Application.Current;
-        readonly ILogger Log = App.Logger;
-        ProfileEditor? EditorWindow = null;
-        SettingsWindow? SettingsWindow { get; set; } = null;
+        private readonly ILogger Log = App.Logger;
+        private ProfileEditor? EditorWindow = null;
+
+        private SettingsWindow? SettingsWindow { get; set; } = null;
 
         public LogWindow()
         {
@@ -23,17 +24,14 @@ namespace DynamicPanelController
             App.CommunicationsStopped += SwapToggleConnectionButtonText;
         }
 
-        void WindowLoaded(object Sender, EventArgs Args)
+        private void WindowLoaded(object Sender, EventArgs Args)
         {
             LogBox.Text = Log.GetLog();
         }
 
         private void SwapToggleConnectionButtonText(object? Sender = null, EventArgs? Args = null)
         {
-            if (App.Communicating)
-                PortConnectionToggle.Content = "Disconnect";
-            else
-                PortConnectionToggle.Content = "Disconnect";
+            PortConnectionToggle.Content = App.Communicating ? "Disconnect" : "Connect";
         }
 
         private void ToggleConnection(object Sender, EventArgs Args)
@@ -53,15 +51,21 @@ namespace DynamicPanelController
             }
         }
 
-        private void LogBoxTextChanged(object Sender, EventArgs E) => LogBox.ScrollToEnd();
+        private void LogBoxTextChanged(object Sender, EventArgs E)
+        {
+            LogBox.ScrollToEnd();
+        }
 
-        private void SetLogBoxText(string Text) => LogBox.Text = Text;
+        private void SetLogBoxText(string Text)
+        {
+            LogBox.Text = Text;
+        }
 
         private void PortSelectionOpened(object Sender, EventArgs Args)
         {
             PortSelection.Items.Clear();
             foreach (var item in SerialPort.GetPortNames())
-                PortSelection.Items.Add(item);
+                _ = PortSelection.Items.Add(item);
         }
 
         private void PortSelectionClosed(object Sender, EventArgs Args)
@@ -79,7 +83,7 @@ namespace DynamicPanelController
         {
             ProfileSelection.Items.Clear();
             foreach (var Profile in App.Profiles)
-                ProfileSelection.Items.Add(Profile.Name);
+                _ = ProfileSelection.Items.Add(Profile.Name);
         }
 
         private void ProfileSelectionClosed(object? Sender, EventArgs Args)
@@ -126,6 +130,9 @@ namespace DynamicPanelController
                 App.Settings = SettingsWindow.EditedSettings;
         }
 
-        private void ApplicationLogChanged(object? Sender, EventArgs Args) => LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
+        private void ApplicationLogChanged(object? Sender, EventArgs Args)
+        {
+            _ = LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
+        }
     }
 }

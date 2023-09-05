@@ -21,7 +21,7 @@ namespace DynamicPanelController
                 {
                     ColumnDefinitions.Add(new ColumnDefinition());
                     SetColumn(this.Elements[i], i);
-                    Children.Add(this.Elements[i]);
+                    _ = Children.Add(this.Elements[i]);
                 }
             }
             this.Context = Context;
@@ -33,13 +33,19 @@ namespace DynamicPanelController
             for (int i = 0; i < Elements?.Length; i++)
             {
                 SetColumn(Elements[i], i);
-                Children.Add(Elements[i]);
+                _ = Children.Add(Elements[i]);
             }
         }
 
-        public void AddKeyedEvent(object Key, EventHandler Handler) => CustomEvents.Add(Key, Handler);
+        public void AddKeyedEvent(object Key, EventHandler Handler)
+        {
+            CustomEvents.Add(Key, Handler);
+        }
 
-        public void RemoveKeyedEvent(object Key) => CustomEvents.Remove(Key);
+        public void RemoveKeyedEvent(object Key)
+        {
+            _ = CustomEvents.Remove(Key);
+        }
 
         public void CallEvent(object Key, object? Sender, EventArgs Args)
         {

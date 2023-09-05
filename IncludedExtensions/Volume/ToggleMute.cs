@@ -7,7 +7,7 @@ namespace IncludedExtensions.Volume
     {
         public object? Do(object? Arguments = null)
         {
-            Volume.Controller.DefaultPlaybackDevice.ToggleMute();
+            _ = Volume.Controller.DefaultPlaybackDevice.ToggleMute();
             return null;
         }
     }

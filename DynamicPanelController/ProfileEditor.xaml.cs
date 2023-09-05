@@ -12,12 +12,13 @@ namespace DynamicPanelController
 {
     public partial class ProfileEditor : Window
     {
-        readonly App App = (App)Application.Current;
+        private readonly App App = (App)Application.Current;
         public PanelProfile EditiedVersion;
-        PanelDescriptorEditor? CustomDescriptorEditor = null;
-        bool PushedButtonSet = true;
+        private PanelDescriptorEditor? CustomDescriptorEditor = null;
+        private bool PushedButtonSet = true;
         public List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
-        readonly Dictionary<string, string?> EnteredOptions = new();
+
+        private readonly Dictionary<string, string?> EnteredOptions = new();
 
         public ProfileEditor(int SelectedIndex)
         {
@@ -26,7 +27,7 @@ namespace DynamicPanelController
             InitializeComponent();
             if (SelectedIndex < 0)
             {
-                MessageBox.Show($"The editor window was opened without a selected profile. Stack trace:\n{Environment.StackTrace}", "Opened incorrecty", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show($"The editor window was opened without a selected profile. Stack trace:\n{Environment.StackTrace}", "Opened incorrecty", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
 
@@ -59,13 +60,13 @@ namespace DynamicPanelController
             EditiedVersion.PanelDescriptor = DescriptorToLoad;
 
             for (int i = 0; i < DescriptorToLoad.ButtonCount; i++)
-                IOSelectorList.Items.Add($"Button {i}");
+                _ = IOSelectorList.Items.Add($"Button {i}");
 
             for (int i = 0; i < DescriptorToLoad.AbsoluteCount; i++)
-                IOSelectorList.Items.Add($"Absolute {i}");
+                _ = IOSelectorList.Items.Add($"Absolute {i}");
 
             for (int i = 0; i < DescriptorToLoad.DisplayCount; i++)
-                IOSelectorList.Items.Add($"Display {i}");
+                _ = IOSelectorList.Items.Add($"Display {i}");
         }
 
         public void IOSelected(object? Sender, EventArgs Args)
@@ -80,19 +81,15 @@ namespace DynamicPanelController
             bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
-            byte? ID;
-
-            if (IsButton)
-                ID = (byte?)IOSelectorList.SelectedIndex;
-            else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
-            else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
-
+            byte? ID = IsButton
+                ? (byte?)IOSelectorList.SelectedIndex
+                : IsSource
+                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
             if (IsButton || IsAbsolute)
             {
                 foreach (var ActionType in App.Actions)
-                    PanelItemSelectorList.Items.Add(ActionType.GetPanelActionDescriptor()?.Name);
+                    _ = PanelItemSelectorList.Items.Add(ActionType.GetPanelActionDescriptor()?.Name);
 
                 if (ID is not null)
                 {
@@ -139,7 +136,7 @@ namespace DynamicPanelController
             else if (IsSource)
             {
                 foreach (var SourceType in App.Sources)
-                    PanelItemSelectorList.Items.Add(SourceType.GetPanelSourceDescriptor()?.Name);
+                    _ = PanelItemSelectorList.Items.Add(SourceType.GetPanelSourceDescriptor()?.Name);
 
                 if (ID is not null)
                 {
@@ -174,24 +171,15 @@ namespace DynamicPanelController
             bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
-            Type? ItemType;
-            if (IsButton || IsAbsolute)
-                ItemType = App.Actions[PanelItemSelectorList.SelectedIndex];
-            else
-                ItemType = App.Sources[PanelItemSelectorList.SelectedIndex];
-
+            Type? ItemType = IsButton || IsAbsolute ? App.Actions[PanelItemSelectorList.SelectedIndex] : App.Sources[PanelItemSelectorList.SelectedIndex];
             if (ItemType is null)
                 return;
 
-            byte? ID;
-
-            if (IsButton)
-                ID = (byte?)IOSelectorList.SelectedIndex;
-            else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
-            else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
-
+            byte? ID = IsButton
+                ? (byte?)IOSelectorList.SelectedIndex
+                : IsSource
+                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
             if (ID is null)
                 return;
 
@@ -200,7 +188,7 @@ namespace DynamicPanelController
                 if (Activator.CreateInstance(ItemType) is not IPanelAction NewAction)
                     return;
                 if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
-                    EditiedVersion.ActionMappings.Remove(ActionMapping);
+                    _ = EditiedVersion.ActionMappings.Remove(ActionMapping);
                 EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = NewAction });
                 LoadActionOptions(EditiedVersion.ActionMappings.Last().Action);
             }
@@ -209,7 +197,7 @@ namespace DynamicPanelController
                 if (Activator.CreateInstance(ItemType) is not IAbsolutePanelAction NewAbsoluteAction)
                     return;
                 if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
-                    EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
+                    _ = EditiedVersion.AbsoluteActionMappings.Remove(AbsoluteActionMapping);
                 EditiedVersion.AbsoluteActionMappings.Add(new() { ID = (byte)ID, AbsoluteAction = NewAbsoluteAction });
                 LoadActionOptions(EditiedVersion.AbsoluteActionMappings.Last().AbsoluteAction);
             }
@@ -218,7 +206,7 @@ namespace DynamicPanelController
                 if (Activator.CreateInstance(ItemType) is not IPanelSource NewSource)
                     return;
                 if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
-                    EditiedVersion.SourceMappings.Remove(SourceMapping);
+                    _ = EditiedVersion.SourceMappings.Remove(SourceMapping);
                 EditiedVersion.SourceMappings.Add(new() { ID = (byte)ID, Source = NewSource });
                 LoadActionOptions(EditiedVersion.SourceMappings.Last().Source);
             }
@@ -239,7 +227,7 @@ namespace DynamicPanelController
                 return;
         }
 
-        void UpdateEnteredOptions(object? Sender, EventArgs Args)
+        private void UpdateEnteredOptions(object? Sender, EventArgs Args)
         {
             EnteredOptions.Clear();
 
@@ -257,16 +245,12 @@ namespace DynamicPanelController
                     else
                         continue;
 
-                    string? Right;
-                    if (OptionItem.Right is ComboBox RightCombo)
-                        Right = RightCombo.Text;
-                    else if (OptionItem.Right is TextBox RightTextBox)
-                        Right = RightTextBox.Text;
-                    else
-                        Right = null;
+                    string? Right = OptionItem.Right is ComboBox RightCombo
+                        ? RightCombo.Text
+                        : OptionItem.Right is TextBox RightTextBox ? RightTextBox.Text : null;
                     if (EnteredOptions.ContainsKey(Left))
                     {
-                        MessageBox.Show($"\"{Left}\" was entered more than once", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _ = MessageBox.Show($"\"{Left}\" was entered more than once", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         continue;
                     }
                     EnteredOptions.Add(Left, Right);
@@ -277,15 +261,11 @@ namespace DynamicPanelController
             bool IsSource = IOSelectorList.SelectedIndex >= EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount;
             bool IsAbsolute = !IsButton && !IsSource;
 
-            byte? ID;
-
-            if (IsButton)
-                ID = (byte?)IOSelectorList.SelectedIndex;
-            else if (IsSource)
-                ID = (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount));
-            else
-                ID = (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
-
+            byte? ID = IsButton
+                ? (byte?)IOSelectorList.SelectedIndex
+                : IsSource
+                ? (byte?)(IOSelectorList.SelectedIndex - (EditiedVersion.PanelDescriptor?.ButtonCount + EditiedVersion.PanelDescriptor?.AbsoluteCount))
+                : (byte?)(IOSelectorList.SelectedIndex - EditiedVersion.PanelDescriptor?.ButtonCount);
             if (ID is null)
                 return;
 
@@ -308,12 +288,12 @@ namespace DynamicPanelController
             }
 
             if (Warning is not null)
-                MessageBox.Show(Warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _ = MessageBox.Show(Warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             OptionsSelectorList.Items.Refresh();
         }
 
-        void LoadActionOptions(Dictionary<string, string?>? Options, string?[]?[]? ValidOptions = null)
+        private void LoadActionOptions(Dictionary<string, string?>? Options, string?[]?[]? ValidOptions = null)
         {
             EnteredOptions.Clear();
             OptionsListBoxItems.Clear();
@@ -415,19 +395,19 @@ namespace DynamicPanelController
             OptionsSelectorList.Items.Refresh();
         }
 
-        void LoadActionOptions(IPanelItem? PanelItem)
+        private void LoadActionOptions(IPanelItem? PanelItem)
         {
             if (PanelItem is null)
                 return;
             LoadActionOptions(PanelItem.GetOptions(), PanelItem.ValidOptions());
         }
 
-        void EditorLoaded(object? Sender, EventArgs Args)
+        private void EditorLoaded(object? Sender, EventArgs Args)
         {
             LoadDescriptor(EditiedVersion.PanelDescriptor);
         }
 
-        void AddOptionButtonClicked(object? Sender, EventArgs Args)
+        private void AddOptionButtonClicked(object? Sender, EventArgs Args)
         {
             TextBox KeyEntry = new() { Text = "", Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
             TextBox ValueEntry = new() { Text = "", Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
@@ -437,13 +417,13 @@ namespace DynamicPanelController
             OptionsSelectorList.Items.Refresh();
         }
 
-        void RemoveOptionButtonClicked(object? Sender, EventArgs Args)
+        private void RemoveOptionButtonClicked(object? Sender, EventArgs Args)
         {
             OptionsListBoxItems.RemoveAt(OptionsSelectorList.SelectedIndex);
             OptionsSelectorList.Items.Refresh();
         }
 
-        void PanelDescriptorButtonClicked(object? Sender, EventArgs Args)
+        private void PanelDescriptorButtonClicked(object? Sender, EventArgs Args)
         {
             if (CustomDescriptorEditor is not null)
                 return;
@@ -453,7 +433,7 @@ namespace DynamicPanelController
             CustomDescriptorEditor.Closed += PanelDescriptorEditorClosed;
         }
 
-        void PanelDescriptorEditorClosed(object? Sender, EventArgs Args)
+        private void PanelDescriptorEditorClosed(object? Sender, EventArgs Args)
         {
             if (CustomDescriptorEditor is null)
                 return;
@@ -471,7 +451,7 @@ namespace DynamicPanelController
             CustomDescriptorEditor = null;
         }
 
-        void PushedButtonPushed(object? Sender, EventArgs Args)
+        private void PushedButtonPushed(object? Sender, EventArgs Args)
         {
             PushedButtonSet = true;
             PushedButton.IsEnabled = false;
@@ -479,7 +459,7 @@ namespace DynamicPanelController
             IOSelectorList.SelectedIndex = -1;
         }
 
-        void ReleasedButtonPushed(object? Sender, EventArgs Args)
+        private void ReleasedButtonPushed(object? Sender, EventArgs Args)
         {
             PushedButtonSet = false;
             PushedButton.IsEnabled = true;
@@ -487,17 +467,17 @@ namespace DynamicPanelController
             IOSelectorList.SelectedIndex = -1;
         }
 
-        void OKClicked(object? Sender, EventArgs Args)
+        private void OKClicked(object? Sender, EventArgs Args)
         {
             EditiedVersion.Name = PanelProfileNameTextBlock.Text;
         }
 
-        void CancelClicked(object? Sender, EventArgs Args)
+        private void CancelClicked(object? Sender, EventArgs Args)
         {
             Close();
         }
 
-        void ApplyClicked(object? Sender, EventArgs Args)
+        private void ApplyClicked(object? Sender, EventArgs Args)
         {
             OKClicked(this, Args);
             Close();
@@ -520,8 +500,8 @@ namespace DynamicPanelController
             SetColumn(Left, 0);
             SetColumn(Right, 1);
             this.Context = Context;
-            Children.Add(Left);
-            Children.Add(Right);
+            _ = Children.Add(Left);
+            _ = Children.Add(Right);
         }
     }
 }

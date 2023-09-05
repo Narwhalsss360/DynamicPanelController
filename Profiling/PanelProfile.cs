@@ -65,9 +65,12 @@ namespace Profiling
             }
         }
 
-        public string Serialize() => JsonSerializer.Serialize(new Serializable(this), options: new JsonSerializerOptions() { WriteIndented = true });
+        public string Serialize()
+        {
+            return JsonSerializer.Serialize(new Serializable(this), options: new JsonSerializerOptions() { WriteIndented = true });
+        }
 
-        class Serializable
+        private class Serializable
         {
             public string? Name { get; set; } = null;
             public Dictionary<byte, string[]>? ActionMappings { get; set; } = null;
