@@ -201,7 +201,6 @@ namespace DynamicPanelController
 
             if (IsButton)
             {
-                Dictionary<string, string?>? OptionsToSet = null;
                 if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
                     EditiedVersion.ActionMappings.Remove(ActionMapping);
                 EditiedVersion.ActionMappings.Add(new() { ID = (byte)ID, UpdateState = PushedButtonSet.ToPushedButtonUpdateState(), Action = (IPanelAction)Activator.CreateInstance(ItemType) });
@@ -246,7 +245,7 @@ namespace DynamicPanelController
             {
                 if (Item is OptionsListBoxItem OptionItem)
                 {
-                    string Left = null;
+                    string Left;
                     if (OptionItem.Left is ComboBox LeftCombo)
                         Left = LeftCombo.Text;
                     else if (OptionItem.Left is TextBox LeftTextBox)

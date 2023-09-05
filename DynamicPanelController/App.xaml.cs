@@ -18,15 +18,16 @@ using System.Windows;
 
 namespace DynamicPanelController
 {
-    public partial class App : Application, ILogger
+    public partial class App : Application
     {
-        public static readonly ushort PacketSize = 16;
-
         public List<PanelProfile> Profiles = new();
         public int SelectedProfileIndex = -1;
+
         public List<Type> Actions = new();
+        public List<Type> AbsoluteActions = new();
         public List<Type> Sources = new();
 
+        public static readonly ushort PacketSize = 16;
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
         readonly Thread SendSourceMappingsThread;
         bool SuspendSendThread = false;
@@ -92,11 +93,47 @@ namespace DynamicPanelController
 
         public AppSettings Settings = new();
 
-        public string CurrentLog { get; private set; } = string.Empty;
+        class ApplicationLogger : ILogger
+        {
+            public string CurrentLog { get; private set; } = string.Empty;
+            public event EventHandler? LogChanged;
 
-        public event EventHandler? LogChangedHandlers;
+            public void Info(string Message)
+            {
+                if (CurrentLog.Length > 0)
+                    if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
+                        CurrentLog += '\n';
+                CurrentLog += $"{DateTime.Now} Info:{Message}";
+                LogChanged?.Invoke(this, new EventArgs());
+            }
+
+            public void Warn(string Message)
+            {
+                if (CurrentLog.Length > 0)
+                    if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
+                        CurrentLog += '\n';
+                CurrentLog += $"{DateTime.Now} Warning:{Message}";
+                LogChanged?.Invoke(this, new EventArgs());
+            }
+
+            public void Error(string Message)
+            {
+                if (CurrentLog.Length > 0)
+                    if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
+                        CurrentLog += '\n';
+                CurrentLog += $"{DateTime.Now} Error:{Message}";
+                LogChanged?.Invoke(this, new EventArgs());
+            }
+
+            public string GetLog() => CurrentLog;
+        }
+
+        public static readonly ILogger Logger = new ApplicationLogger();
+
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
+
+        List<PanelExtension.Extension> PanelExtensions = new();
 
         App()
         {
@@ -109,11 +146,14 @@ namespace DynamicPanelController
 
         void ApplicationStarting(object Sender, EventArgs Args)
         {
-            Info("Program starting");
+            Logger.Info("Program starting");
             LoadSettings();
-            SetProperty<Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
-            SetProperty<Extension>("Refresher", (Refresher)RefreshPanelExtensionProperties);
+            SetProperty<PanelExtension.Extension>("Subscriber", (PanelExtensionSubscriber)SubscribePanelExtension);
+            SetProperty<PanelExtension.Extension>("Unsubscriber", (PanelExtensionUnsubscriber)UnsubscribePanelExtension);
+
             LoadExtensionsFromDirectory();
+            SetProperty<PanelExtension.Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
+            SetProperty<PanelExtension.Extension>("Refresher", (ExtensionRefresher)RefreshPanelExtension);
             LoadProfiles();
         }
 
@@ -139,7 +179,7 @@ namespace DynamicPanelController
             }
         }
 
-        public int LoadExtension(Assembly AssemblyToLoad, string? ModuleName)
+        int LoadExtension(Assembly AssemblyToLoad, string? ModuleName)
         {
             Type[]? Types;
             if (ModuleName is null)
@@ -156,7 +196,7 @@ namespace DynamicPanelController
 
             if (Types is null)
             {
-                Error($"Couldn't load assembly {AssemblyToLoad.FullName}");
+                Logger.Error($"Couldn't load assembly {AssemblyToLoad.FullName}");
                 return -2;
             }
 
@@ -170,36 +210,36 @@ namespace DynamicPanelController
                     {
                         if (Type.GetCustomAttribute<PanelActionDescriptorAttribute>() is null)
                         {
-                            Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.");
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.");
                             continue;
                         }
                         Actions.Add(Type);
                         ExtensionsLoaded++;
-                        Info($"Loaded {Type.FullName}");
+                        Logger.Info($"Loaded {Type.FullName}");
                     }
                     else if (Interface == typeof(IPanelSource))
                     {
                         if (Type.GetCustomAttribute<PanelSourceDescriptorAttribute>() is null)
                         {
-                            Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.");
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.");
                             continue;
                         }
                         Sources.Add(Type);
                         ExtensionsLoaded++;
-                        Info($"Loaded {Type.FullName}");
+                        Logger.Info($"Loaded {Type.FullName}");
                     }
                 }
             }
             if (ExtensionsLoaded > 0)
-                Info($"Loaded {ExtensionsLoaded} from {AssemblyToLoad.FullName}");
+                Logger.Info($"Loaded {ExtensionsLoaded} from {AssemblyToLoad.FullName}");
             return ExtensionsLoaded;
         }
 
-        public void LoadProfile(string Json) => Profiles.Add(new PanelProfile(Json, Actions.ToArray(), Sources.ToArray()));
+        void LoadProfile(string Json) => Profiles.Add(new PanelProfile(Json, Actions.ToArray(), Sources.ToArray()));
 
-        public void LoadProfile(byte[] Bytes) => LoadProfile(Encoding.UTF8.GetString(Bytes));
+        void LoadProfile(byte[] Bytes) => LoadProfile(Encoding.UTF8.GetString(Bytes));
 
-        public void LoadProfiles()
+        void LoadProfiles()
         {
             if (!Directory.Exists(Settings.ProfilesDirectory))
                 return;
@@ -213,16 +253,14 @@ namespace DynamicPanelController
                 LoadProfile(FileBytes);
             }
             if (Profiles.Count == 0)
-            {
                 Profiles.Add(new PanelProfile() { Name = "Empty" });
-            }
         }
 
-        public void LoadSettings()
+        void LoadSettings()
         {
             if (!File.Exists(Settings.FilePath))
             {
-                Error($"Could not find settings file @ {Settings.FilePath}");
+                Logger.Error($"Could not find settings file @ {Settings.FilePath}");
                 return;
             }
 
@@ -234,24 +272,52 @@ namespace DynamicPanelController
             }
             catch (JsonException Ex)
             {
-                Error($"Exception occured while loading settings {Ex.Message}. Loading default settings.");
+                Logger.Error($"Exception occured while loading settings {Ex.Message}. Loading default settings.");
             }
             if (Deserialized is not null)
                 Settings = new(Deserialized);
         }
 
-        public void RefreshPanelExtensionProperties()
+        object? SubscribePanelExtension(PanelExtension.Extension Extension)
         {
-            SetProperty<Extension>("PanelActions", Actions.ToArray());
-            SetProperty<Extension>("PanelSources", Sources.ToArray());
-            SetProperty<Extension>("Profiles", Profiles.ToArray());
-            SetProperty<Extension>("CurrentProfile", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex]);
-            SetProperty<Extension>("Logger", this);
+            if (PanelExtensions.Contains(Extension))
+                return "Already subscribed.";
+            PanelExtensions.Add(Extension);
+            return null;
+        }
+
+        void SetPanelExtensionVariables(PanelExtension.Extension Extension)
+        {
+            PanelExtension.Extension.ApplicationVariables Variables = new();
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("LastLoad", DateTime.Now, Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("Logger", Logger, Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("CurrentProfile", (SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex]), Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("Profiles", (SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex]), Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("Actions", Actions.ToArray(), Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
+            SetProperty<PanelExtension.Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
+            SetProperty<PanelExtension.Extension>("Application", Variables, Extension);
+        }
+
+        void RefreshPanelExtension(PanelExtension.Extension? Extension)
+        {
+            if (Extension is null)
+                PanelExtensions.ForEach(E => SetPanelExtensionVariables(E));
+            else
+                SetPanelExtensionVariables(Extension);
+        }
+
+        object? UnsubscribePanelExtension(PanelExtension.Extension Extension)
+        {
+            if (PanelExtensions.Contains(Extension))
+                return "Not subscribed.";
+            PanelExtensions.Remove(Extension);
+            return null;
         }
 
         public void StartPortCommunication()
         {
-            Info($"Starting communications on port {Port.PortName}");
+            Logger.Info($"Starting communications on port {Port.PortName}");
             Port.Open();
             SuspendSendThread = false;
             if (SendSourceMappingsThread.ThreadState == ThreadState.Unstarted)
@@ -287,7 +353,7 @@ namespace DynamicPanelController
                     }
                     catch (Exception)
                     {
-                        Error($"Device on port {Port.PortName} disconnected.");
+                        Logger.Error($"Device on port {Port.PortName} disconnected.");
                         StopPortCommunication();
                     }
                 }
@@ -296,7 +362,7 @@ namespace DynamicPanelController
 
         public void StopPortCommunication()
         {
-            Info($"Stopping communications on port {Port.PortName}");
+            Logger.Info($"Stopping communications on port {Port.PortName}");
             SuspendSendThread = true;
             Port.Close();
             Communicating = false;
@@ -314,14 +380,14 @@ namespace DynamicPanelController
                 case MessageReceiveIDs.ButtonStateUpdate:
                     if (ReceivedMessage.MessageSize < 2)
                     {
-                        Error("Did not receive button state, only button ID.");
+                        Logger.Error("Did not receive button state, only button ID.");
                         break;
                     }
 
                     byte InputID = ReceivedMessage.Data[InputIDIndex];
                     ButtonUpdateStates ButtonState = ReceivedMessage.Data[ButtonStateIndex].ToButtonUpdateState();
 
-                    Info($"Button {InputID} has been {ButtonState}");
+                    Logger.Info($"Button {InputID} has been {ButtonState}");
 
                     if (SelectedProfileIndex == -1)
                         break;
@@ -329,7 +395,7 @@ namespace DynamicPanelController
                     PanelProfile SelectedProfile = Profiles[SelectedProfileIndex];
                     if (SelectedProfile.ActionMappings.Find(A => A.ID == InputID && A.UpdateState == ButtonState) is not ActionMapping Mapping)
                         return;
-                    Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}");
+                    Logger.Info($"Doing action {Mapping.Action.GetDescriptorAttribute()?.Name}");
                     Mapping.Action.Do();
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
@@ -346,13 +412,13 @@ namespace DynamicPanelController
             Collector.Collect(Encoding.UTF8.GetBytes(Port.ReadExisting()));
         }
 
-        public void SaveSettings()
+        void SaveSettings()
         {
             using var SettingsFile = new StreamWriter(Settings.FilePath);
             SettingsFile.Write(JsonSerializer.Serialize(new AppSettings.Serializable(Settings), options: new JsonSerializerOptions() { WriteIndented = true }));
         }
 
-        public void SaveProfiles()
+        void SaveProfiles()
         {
             foreach (var Profile in Profiles)
                 using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
@@ -363,50 +429,26 @@ namespace DynamicPanelController
         {
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
-            List<EventHandler>? Handlers = GetProperty<Extension, List<EventHandler>>("ExitingHandlers");
-            Handlers?.ForEach(Handler => Handler.Invoke(this, new EventArgs()));
-            Info("Program exiting");
+            PanelExtensions.ForEach(E => InvokeMethod<PanelExtension.Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
+            Logger.Info("Program exiting...");
             SaveSettings();
             SaveProfiles();
-            using var LogStream = new StreamWriter(Settings.LogDirectory, true);
-            LogStream.Write(CurrentLog);
+            new StreamWriter(Settings.LogDirectory, true).Write(Logger.GetLog());
         }
 
-        static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null) => typeof(ClassType).GetProperty(PropertyName)?.SetValue(Instance, Value);
-
-        static PropertyType? GetProperty<ClassType, PropertyType>(string PropertyName, object? Instance = null) => (PropertyType?)(typeof(ClassType).GetProperty(PropertyName)?.GetValue(Instance));
-
-        public void Info(string Message)
+        static object? InvokeMethod<ClassType>(string MethodName, object?[]? Parameters, object? Instance, Type[]? Types = null)
         {
-            if (CurrentLog.Length > 0)
-                if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
-                    CurrentLog += '\n';
-            CurrentLog += $"{DateTime.Now} Info:{Message}";
-            LogChangedHandlers?.Invoke(this, new EventArgs());
+            Type t = typeof(ClassType);
+            MethodInfo? m;
+            if (Types is not null)
+                m = t.GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : BindingFlags.Instance), Types);
+            else
+                m = t.GetMethod(MethodName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : BindingFlags.Instance));
+            return m?.Invoke(Instance, Parameters);
         }
 
-        public void Warn(string Message)
-        {
-            if (CurrentLog.Length > 0)
-                if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
-                    CurrentLog += '\n';
-            CurrentLog += $"{DateTime.Now} Warning:{Message}";
-            LogChangedHandlers?.Invoke(this, new EventArgs());
-        }
+        static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null) => typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : 0))?.SetValue(Instance, Value);
 
-        public void Error(string Message)
-        {
-            if (CurrentLog.Length > 0)
-                if (!(CurrentLog.Last() == '\r' || CurrentLog.Last() == '\n'))
-                    CurrentLog += '\n';
-            CurrentLog += $"{DateTime.Now} Error:{Message}";
-            LogChangedHandlers?.Invoke(this, new EventArgs());
-        }
-
-        public void OnLogChange(EventHandler Handler) => LogChangedHandlers += Handler;
-
-        public void RemoveOnLogChange(EventHandler Handler) => LogChangedHandlers -= Handler;
-
-        public string GetLog() => CurrentLog;
+        static PropertyType? GetProperty<ClassType, PropertyType>(string PropertyName, object? Instance = null) => (PropertyType?)(typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : 0))?.GetValue(Instance));
     }
 }

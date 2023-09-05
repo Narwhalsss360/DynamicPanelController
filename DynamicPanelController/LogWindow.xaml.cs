@@ -8,7 +8,7 @@ namespace DynamicPanelController
     public partial class LogWindow : Window
     {
         private readonly App App = (App)Application.Current;
-        readonly ILogger Log;
+        readonly ILogger Log = App.Logger;
         ProfileEditor? EditorWindow = null;
         SettingsWindow? SettingsWindow { get; set; } = null;
 
@@ -18,8 +18,7 @@ namespace DynamicPanelController
                 throw new Exception("Couldn't get current app.");
             InitializeComponent();
             Loaded += WindowLoaded;
-            Log = App;
-            Log.OnLogChange(ApplicationLogChanged);
+            Log.LogChanged += ApplicationLogChanged;
             App.CommunicationsStarted += SwapToggleConnectionButtonText;
             App.CommunicationsStopped += SwapToggleConnectionButtonText;
         }

@@ -1,15 +1,19 @@
-﻿using PanelExtension;
-using Profiling.ProfilingTypes;
+﻿using Profiling.ProfilingTypes;
 using System.Diagnostics;
 
 namespace IncludedExtensions
 {
     [PanelActionDescriptor("Execute")]
-    public class Execute : IPanelAction
+    public class Execute : PanelExtension.Extension, IPanelAction
     {
         string? ProgramPath = null;
         Process? UserProcess = null;
         Dictionary<string, string?> CurrentOptions = new();
+
+        public Execute()
+            : base()
+        {
+        }
 
         public string?[]?[]? ValidOptions() => new string?[]?[] { new string?[] { "Path", null } };
 
@@ -28,23 +32,21 @@ namespace IncludedExtensions
 
         public object? Do(object? Arguments = null)
         {
-            Extension.Refresh();
             if (ProgramPath is null)
             {
-                Extension.Logger?.Error("No program path specified.");
+                Application?.Logger.Error("No program path specified.");
                 return null;
             }
 
             if (!File.Exists(ProgramPath))
             {
-                Extension.Logger?.Error($"\"{ProgramPath}\" Doesn't exist.");
+                Application?.Logger.Error($"\"{ProgramPath}\" Doesn't exist.");
                 return null;
             }
 
             UserProcess = Process.Start(ProgramPath);
             UserProcess.Exited += UserProgramExitted;
-            Extension.Logger?.Info($"Executed {UserProcess.ProcessName}  -> {ProgramPath}");
-
+            Application?.Logger.Info($"Executed {UserProcess.ProcessName}  -> {ProgramPath}");
             return null;
         }
 
@@ -53,10 +55,11 @@ namespace IncludedExtensions
             if (UserProcess is null)
                 return;
 
-            Extension.Logger?.Info($"{UserProcess.ProcessName} exited with code {UserProcess.ExitCode}.");
+            Application?.Logger.Info($"{UserProcess.ProcessName} exited with code {UserProcess.ExitCode}.");
             if (UserProcess.ExitCode != 0)
-                Extension.Logger?.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
+                Application?.Logger?.Warn($"Non-zero exit. {UserProcess.StandardError.ReadToEnd()}");
             UserProcess = null;
         }
+
     }
 }
