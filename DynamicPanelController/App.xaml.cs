@@ -16,6 +16,8 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 
 namespace DynamicPanelController
 {
@@ -34,12 +36,21 @@ namespace DynamicPanelController
 
         private Thread SendSourceMappingsThread;
         private bool SuspendSendThread = false;
-        private bool ThreadRestartRequired = false;
         private readonly PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
         public bool Communicating { get; private set; } = false;
-        public bool AllowEmulator { get; private set; } = false;
+        public bool AllowEmulator { get
+            {
+                if (Settings.GlobalSettings.ContainsKey("EmulatorEnabled"))
+                {
+                    return Settings.GlobalSettings["EmulatorEnabled"].ToLower() == "true";
+                }
+                else
+                {
+                    return false;
+                }
+            } }
         private bool Emulating = false;
         public EmulatorDisplayOut? EmulatorDisplay = null;
 
@@ -57,12 +68,12 @@ namespace DynamicPanelController
             {
             }
 
-
             public AppSettings(Serializable Serialized)
             {
                 ExtensionsDirectory = Serialized.ExtensionsDirectory;
                 ProfilesDirectory = Serialized.ProfilesDirectory;
                 LogDirectory = Serialized.LogDirectory;
+
                 if (Serialized.GlobalPanelDescriptor is not null)
                     GlobalPanelDescriptor = new PanelDescriptor(Serialized.GlobalPanelDescriptor);
                 if (Serialized.GlobalSettings is not null)
@@ -151,13 +162,90 @@ namespace DynamicPanelController
             Port.DataReceived += PortDataReceived;
             Collector.PacketsReady += PacketsCollected;
             Exit += Exiting;
+            Profiles.CollectionChanged += ProfilesListChanged;
             SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
 
-        void ProfileRemoved(object? Sender, EventArgs Args)
+        void ProfilesListChanged(object? Sender, NotifyCollectionChangedEventArgs Args)
         {
-            if (Profiles.Count == 0)
-                Profiles.Add(new PanelProfile() { Name = "New Profile" });
+            var Collection = Sender as ObservableCollection<PanelProfile>;
+            if (Collection is null)
+                return;
+
+            if (Args.Action == NotifyCollectionChangedAction.Remove)
+            {
+                if (Collection.Count == 0)
+                    Collection.Add(new PanelProfile() { Name = "New Profile" });
+
+                if (SelectedProfileIndex >= Collection.Count)
+                    SelectedProfileIndex = 0;
+            }
+            else if (Args.Action == NotifyCollectionChangedAction.Add)
+            {
+                if (Collection.Count == 1)
+                    return;
+
+                if (Args.NewItems is null)
+                    return;
+
+                for (int iItems = 0; iItems < Collection.Count; iItems++)
+                {
+                    if (iItems >= Args.NewStartingIndex)
+                        continue;
+
+                    foreach (var NewItem in Args.NewItems)
+                    {
+                        if (NewItem is not PanelProfile NewProfile)
+                            continue;
+
+                        for (int iName = 1; Collection.Any(Profile => ReferenceEquals(Profile, NewProfile) ? false : Profile.Name == NewProfile.Name); iName++)
+                            NewProfile.Name = $"{Collection[iItems].Name}({iName})";
+                    }
+                }
+            }
+            else if (Args.Action == NotifyCollectionChangedAction.Replace)
+            {
+                if (Args.NewItems is null)
+                    return;
+
+                if (Args.OldItems is null)
+                    return;
+
+                int iNewItems = 0;
+                foreach (var NewObject in Args.NewItems)
+                {
+                    if (NewObject is not PanelProfile NewProfile)
+                        goto EndLoop;
+
+                    for (int iSearch = Args.NewItems.Count - 1; iSearch >= 0 ; iSearch--)
+                    {
+                        if (iSearch == iNewItems)
+                            continue;
+
+                        if (Args.NewItems[iSearch] is not PanelProfile CheckProfile)
+                            continue;
+
+                        for (int iName = 1; CheckProfile.Name == NewProfile.Name; iName++)
+                            NewProfile.Name = $"{CheckProfile.Name}({iName})";
+                    }
+                EndLoop:
+                    iNewItems++;
+                }
+
+                foreach (var NewObject in Args.NewItems)
+                {
+                    if (NewObject is not PanelProfile NewProfile)
+                        continue;
+                    for (int iItems = 0; iItems < Collection.Count; iItems++)
+                    {
+                        if (ReferenceEquals(NewProfile, Collection[iItems]))
+                            continue;
+
+                        for (int iName = 1; Collection.Any(Profile => ReferenceEquals(Profile, NewProfile) ? false : Profile.Name == NewProfile.Name); iName++)
+                                NewProfile.Name = $"{Collection[iItems].Name}({iName})";
+                    }
+                }
+            }
         }
 
         private void ApplicationStarting(object Sender, EventArgs Args)
@@ -280,20 +368,21 @@ namespace DynamicPanelController
             return ExtensionsLoaded;
         }
 
-        private void LoadProfile(string Json)
+        public void LoadProfile(string Json)
         {
             bool Result;
             PanelProfile LoadedProfile = new(Json, Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray(), out Result);
             if (Result)
                 Profiles.Add(LoadedProfile);
+            SortProfiles();
         }
 
-        private void LoadProfile(byte[] Bytes)
+        public void LoadProfile(byte[] Bytes)
         {
             LoadProfile(Encoding.UTF8.GetString(Bytes));
         }
 
-        private void LoadProfiles()
+        public void LoadProfiles()
         {
             if (!Directory.Exists(Settings.ProfilesDirectory))
                 return;
@@ -330,8 +419,6 @@ namespace DynamicPanelController
             }
             if (Deserialized is not null)
                 Settings = new(Deserialized);
-            //if (File.Exists($"{Environment.CurrentDirectory}\\Emulate"))
-                AllowEmulator = true;
         }
 
         private object? SubscribePanelExtension(Extension Extension)
@@ -448,7 +535,6 @@ namespace DynamicPanelController
                 }
                 Thread.Sleep(15);
             }
-            ThreadRestartRequired = true;
             SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
 
@@ -560,8 +646,62 @@ namespace DynamicPanelController
             SettingsFile.Write(JsonSerializer.Serialize(new AppSettings.Serializable(Settings), options: new JsonSerializerOptions() { WriteIndented = true }));
         }
 
-        private void SaveProfiles()
+        public void SortProfiles()
         {
+            PanelProfile? Selected = null;
+            if (SelectedProfileIndex != -1)
+                Selected = Profiles[SelectedProfileIndex];
+
+            Profiles = new(Profiles.OrderBy(Profile => Profile.Name));
+            Profiles.CollectionChanged += ProfilesListChanged;
+            for (int i = 0; i < Profiles.Count; i++)
+            {
+                if (ReferenceEquals(Selected, Profiles[i]))
+                {
+                    SelectedProfileIndex = i;
+                    break;
+                }    
+            }
+        }
+
+        public void RefreshProfiles()
+        {
+            DirectoryInfo DirectoryInfo = new DirectoryInfo(Settings.ProfilesDirectory);
+            foreach (var FileInfo in DirectoryInfo.GetFiles())
+            {
+                if (FileInfo.Extension != ".json")
+                    continue;
+
+                byte[] FileBytes = new byte[FileInfo.Length];
+
+                using (var ProfileStream = FileInfo.Open(FileMode.Open))
+                    _ = ProfileStream.Read(FileBytes, 0, FileBytes.Length);
+                PanelProfile Profile = new PanelProfile(Encoding.UTF8.GetString(FileBytes), Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray(), out bool Result);
+                if (!Result)
+                    continue;
+
+                int FindIndex = -1;
+                for (int i = 0; i < Profiles.Count; i++)
+                {
+                    if (Profiles[i].Name == Profile.Name)
+                    {
+                        FindIndex = i;
+                        break;
+                    }    
+                }
+                FileInfo.Delete();
+                if (FindIndex == -1)
+                    break;
+
+                using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
+                    ProfileFile.Write(Profile.Serialize());
+            }
+            SortProfiles();
+        }
+
+        public void SaveProfiles()
+        {
+            SortProfiles();
             foreach (var Profile in Profiles)
                 using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
                     ProfileFile.Write(Profile.Serialize());

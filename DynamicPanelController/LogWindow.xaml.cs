@@ -3,6 +3,7 @@ using Profiling;
 using System;
 using System.DirectoryServices;
 using System.IO.Ports;
+using System.Linq;
 using System.Windows;
 
 namespace DynamicPanelController
@@ -112,9 +113,11 @@ namespace DynamicPanelController
 
         private void UpdateProfileSelectionItems()
         {
+            App.RefreshProfiles();
             ProfileSelection.Items.Clear();
             foreach (var Profile in App.Profiles)
                 _ = ProfileSelection.Items.Add(Profile.Name);
+            ProfileSelection.SelectedIndex = App.SelectedProfileIndex;
         }
 
         private void ProfileSelectionOpened(object? Sender, EventArgs Args)
@@ -127,19 +130,23 @@ namespace DynamicPanelController
             DeleteProfile.IsEnabled = false;
             EditProfile.IsEnabled = false;
             if (ProfileSelection.SelectedIndex == -1)
-                ProfileSelection.SelectedIndex = 0;
-            if (ProfileSelection.SelectedIndex == -1)
                 return;
             App.SelectedProfileIndex = ProfileSelection.SelectedIndex;
             EditProfile.IsEnabled = true;
             DeleteProfile.IsEnabled = true;
         }
 
+        private void ProfileSelectionClosed(object? Sender, EventArgs Args)
+        {
+            if (ProfileSelection.SelectedIndex == -1)
+                ProfileSelection.SelectedIndex = 0;
+        }
+
         private void NewProfileButtonClicked(object? Sender, EventArgs Args)
         {
             App.Profiles.Add(new PanelProfile() { Name = "New Profile"});
+            App.SelectedProfileIndex = App.Profiles.Count - 1;
             UpdateProfileSelectionItems();
-            ProfileSelection.SelectedIndex = ProfileSelection.Items.Count - 1;
         }
 
         private void DeleteProfileButtonClicked(object? Sender, EventArgs Args)
@@ -167,7 +174,6 @@ namespace DynamicPanelController
                 App.Profiles[App.SelectedProfileIndex] = EditorWindow.EditiedVersion;
             EditorWindow = null;
             UpdateProfileSelectionItems();
-            ProfileSelection.SelectedIndex = App.SelectedProfileIndex;
         }
 
         private void SettingsButtonClicked(object? Sender, EventArgs Args)

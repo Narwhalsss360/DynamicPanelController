@@ -21,7 +21,7 @@
             <Button x:Name="NewProfile" Width="50" Content="New" Margin="5" Click="NewProfileButtonClicked"/>
             <Button x:Name="DeleteProfile" Width="50" Content="Delete" Margin="5" IsEnabled="False" Click="DeleteProfileButtonClicked"/>
             <Button x:Name="EditProfile" Width="50" Content="Edit" Margin="5" IsEnabled="False" Click="EditProfileButtonClicked"/>
-            <ComboBox x:Name="ProfileSelection" DropDownOpened="ProfileSelectionOpened" SelectionChanged="ProfileSelectionChanged"  Width="160" HorizontalAlignment="Right" Margin="5" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+            <ComboBox x:Name="ProfileSelection" DropDownOpened="ProfileSelectionOpened" SelectionChanged="ProfileSelectionChanged" DropDownClosed="ProfileSelectionClosed" Width="160" HorizontalAlignment="Right" Margin="5" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
             <Button x:Name="EditSettings" Content="Settings" Width="60" Margin="5" Click="SettingsButtonClicked"/>
         </StackPanel>
 
