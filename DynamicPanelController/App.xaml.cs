@@ -663,11 +663,11 @@ namespace DynamicPanelController
                     Logger.Log(ILogger.Levels.Verbose, $"Doing action {ActionMapping.Action.GetDescriptorAttribute()?.Name}.", "Program");
                     object? ActionResult = ActionMapping.Action.Do();
                     if (ActionResult is string ResultString)
-                        Logger.Log(ILogger.Levels.Warning, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}", "Program");
+                        Logger.Log(ILogger.Levels.Warning, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} Do -> {ResultString}", "Program");
                     else if (ActionResult is Exception ActionResultException)
-                        Logger.Log(ILogger.Levels.Error, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResultException.Message}", "Program");
+                        Logger.Log(ILogger.Levels.Error, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} Do -> {ActionResultException.Message}", "Program");
                     else if (ActionResult is not null)
-                        Logger.Log(ILogger.Levels.Warning, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResult}", "Program");
+                        Logger.Log(ILogger.Levels.Warning, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} Do -> {ActionResult}", "Program");
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
                     if (State is not double)
@@ -683,11 +683,11 @@ namespace DynamicPanelController
                     Logger.Log(ILogger.Levels.Verbose, $"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {StateDouble}", "Program");
                     object? AbsoluteActionResult = AbsoluteActionMapping.AbsoluteAction.Set(StateDouble);
                     if (AbsoluteActionResult is string AbsoluteResultString)
-                        Logger.Log(ILogger.Levels.Warning, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultString}", "Program");
+                        Logger.Log(ILogger.Levels.Warning, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} Set -> {AbsoluteResultString}", "Program");
                     else if (AbsoluteActionResult is Exception AbsoluteResultException)
-                        Logger.Log(ILogger.Levels.Error, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultException.Message}", "Program");
+                        Logger.Log(ILogger.Levels.Error, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} Set -> {AbsoluteResultException.Message}", "Program");
                     else if (AbsoluteActionResult is not null)
-                        Logger.Log(ILogger.Levels.Warning, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteActionResult}", "Program");
+                        Logger.Log(ILogger.Levels.Warning, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} Set -> {AbsoluteActionResult}", "Program");
                     break;
                 default:
                     break;
