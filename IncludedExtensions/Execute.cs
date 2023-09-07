@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using PanelExtension;
+﻿using PanelExtension;
 using Profiling.ProfilingTypes.PanelItems;
+using System.ComponentModel;
+using System.Diagnostics;
 
 namespace IncludedExtensions
 {
@@ -50,7 +50,7 @@ namespace IncludedExtensions
 
             try
             {
-                Process.Start(ProgramPath);
+                _ = Process.Start(ProgramPath);
             }
             catch (Win32Exception E)
             {
@@ -60,9 +60,9 @@ namespace IncludedExtensions
             {
                 Caught = E.Message;
             }
-            catch(FileNotFoundException E)
+            catch (FileNotFoundException E)
             {
-                Caught= E.Message;
+                Caught = E.Message;
             }
 
             if (Caught is not null)

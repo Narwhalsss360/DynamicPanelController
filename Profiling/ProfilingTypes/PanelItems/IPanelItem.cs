@@ -6,7 +6,7 @@ namespace Profiling.ProfilingTypes.PanelItems
     public class PanelItemDescriptorAttribute : Attribute
     {
         public readonly string Name;
-        Type? IPanelItemImplementor;
+        public readonly Type? IPanelItemImplementor;
 
         public PanelItemDescriptorAttribute(string Name, Type? IPanelItemImplementor = null)
         {

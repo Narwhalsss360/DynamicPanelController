@@ -8,7 +8,7 @@ namespace DynamicPanelController
 {
     public partial class PanelEmulator : Window
     {
-        App App = (App)Application.Current;
+        private readonly App App = (App)Application.Current;
 
         public PanelEmulator()
         {
@@ -18,22 +18,22 @@ namespace DynamicPanelController
             Closing += WindowClosing;
         }
 
-        void WindowLoaded(object? Sender, EventArgs Args)
+        private void WindowLoaded(object? Sender, EventArgs Args)
         {
             if (App.Settings.GlobalPanelDescriptor is null)
             {
-                MessageBox.Show("Emulator uses global panel descriptor, please set it.", "", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                _ = MessageBox.Show("Emulator uses global panel descriptor, please set it.", "", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
 
             for (byte i = 0; i < App.Settings.GlobalPanelDescriptor.ButtonCount; i++)
-                ButtonStack.Children.Add(new EmulatorButton(i));
+                _ = ButtonStack.Children.Add(new EmulatorButton(i));
 
             for (byte i = 0; i < App.Settings.GlobalPanelDescriptor.AbsoluteCount; i++)
-                AbsoluteStack.Children.Add(new EmulatorAbsolute(i));
+                _ = AbsoluteStack.Children.Add(new EmulatorAbsolute(i));
 
             for (byte i = 0; i < App.Settings.GlobalPanelDescriptor.DisplayCount; i++)
-                DisplayStack.Children.Add(new EmulatorDisplay(i));
+                _ = DisplayStack.Children.Add(new EmulatorDisplay(i));
         }
 
         private void WindowClosing(object? sender, EventArgs e)
@@ -43,10 +43,10 @@ namespace DynamicPanelController
         }
     }
 
-    class EmulatorButton : Button
+    internal class EmulatorButton : Button
     {
-        readonly byte ID;
-        App App = (App)Application.Current;
+        private readonly byte ID;
+        private readonly App App = (App)Application.Current;
 
         public EmulatorButton(byte ID)
             : base()
@@ -69,16 +69,14 @@ namespace DynamicPanelController
         }
     }
 
-    class EmulatorAbsolute : Grid
+    internal class EmulatorAbsolute : Grid
     {
-        readonly byte ID;
-        App App = (App)Application.Current;
-
-        TextBlock SliderTitle = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
-        Slider Slider = new() { Margin = new Thickness(5), Maximum = 100 };
-        Button RangeButton = new() { Margin = new Thickness(5), Content = "Range" };
-
-        EditSliderMinMax? Editor = null;
+        private readonly byte ID;
+        private readonly App App = (App)Application.Current;
+        private readonly TextBlock SliderTitle = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
+        private readonly Slider Slider = new() { Margin = new Thickness(5), Maximum = 100 };
+        private readonly Button RangeButton = new() { Margin = new Thickness(5), Content = "Range" };
+        private EditSliderMinMax? Editor = null;
 
         public EmulatorAbsolute(byte ID)
             : base()
@@ -96,16 +94,15 @@ namespace DynamicPanelController
 
             RangeButton.Click += RangeClicked;
 
-            Children.Add(SliderTitle);
-            Children.Add(Slider);
-            Children.Add(RangeButton);
-            Unloaded += ElementUnloaded;   
+            _ = Children.Add(SliderTitle);
+            _ = Children.Add(Slider);
+            _ = Children.Add(RangeButton);
+            Unloaded += ElementUnloaded;
         }
 
         private void ElementUnloaded(object sender, RoutedEventArgs e)
         {
-            if (Editor is not null)
-                Editor.Close();
+            Editor?.Close();
         }
 
         private void SliderMoved(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -113,7 +110,7 @@ namespace DynamicPanelController
             App.RouteUpdate(MessageReceiveIDs.AbsolutePosition, ID, Slider.Value);
         }
 
-        void EditorClosed(object? Sender, EventArgs Args)
+        private void EditorClosed(object? Sender, EventArgs Args)
         {
             if (Editor is null)
                 return;
@@ -123,7 +120,7 @@ namespace DynamicPanelController
             Editor = null;
         }
 
-        void RangeClicked(object? Sender, EventArgs Args)
+        private void RangeClicked(object? Sender, EventArgs Args)
         {
             if (Editor is not null)
                 return;
@@ -134,17 +131,15 @@ namespace DynamicPanelController
         }
     }
 
-    class EmulatorDisplay : Grid
+    internal class EmulatorDisplay : Grid
     {
         public delegate void SetDataFunction(string Data);
 
         public static Dictionary<byte, Tuple<TextBlock, SetDataFunction>> InstanceMapping = new();
-        App App = (App)Application.Current;
-
-        readonly byte ID;
-
-        TextBlock DisplayTitle = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
-        TextBlock DisplayData = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
+        private readonly App App = (App)Application.Current;
+        private readonly byte ID;
+        private readonly TextBlock DisplayTitle = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
+        private readonly TextBlock DisplayData = new() { Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Center };
 
         public EmulatorDisplay(byte ID)
         {
@@ -155,21 +150,21 @@ namespace DynamicPanelController
             ColumnDefinitions.Add(new ColumnDefinition());
             SetColumn(DisplayData, 1);
 
-            Children.Add(DisplayTitle);
-            Children.Add(DisplayData);
+            _ = Children.Add(DisplayTitle);
+            _ = Children.Add(DisplayData);
 
             InstanceMapping.Add(ID, new(DisplayData, SetData));
 
             Unloaded += ElementUnloaded;
         }
 
-        void ElementUnloaded(object? Sender, EventArgs Args)
+        private void ElementUnloaded(object? Sender, EventArgs Args)
         {
             if (InstanceMapping.ContainsKey(ID))
-                InstanceMapping.Remove(ID);
+                _ = InstanceMapping.Remove(ID);
         }
 
-        void SetData(string Data)
+        private void SetData(string Data)
         {
             DisplayData.Text = Data;
         }
@@ -179,7 +174,7 @@ namespace DynamicPanelController
             if (!InstanceMapping.ContainsKey(ID))
                 return;
             Tuple<TextBlock, SetDataFunction> Invoker = InstanceMapping[ID];
-            Invoker.Item1.Dispatcher.Invoke(Invoker.Item2, Data);
+            _ = Invoker.Item1.Dispatcher.Invoke(Invoker.Item2, Data);
         }
     }
 }

@@ -30,8 +30,7 @@ namespace DynamicPanelController
 
         private void WindowClosed(object? sender, EventArgs e)
         {
-            if (DescriptorEditor is not null)
-                DescriptorEditor.Close();
+            DescriptorEditor?.Close();
         }
 
         private string? VerifyValid()
@@ -124,7 +123,7 @@ namespace DynamicPanelController
                 Options.Add(new(EditedSettings.GlobalSettings, KVP.Key, KVP.Value));
             GlobalOptionsPanel.ItemsSource = Options;
             for (int i = 0; i <= (int)ILogger.Levels.Error; i++)
-                LogLevelSelector.Items.Add((ILogger.Levels)i);
+                _ = LogLevelSelector.Items.Add((ILogger.Levels)i);
             LogLevelSelector.SelectedIndex = (int)EditedSettings.LogLevel;
         }
 

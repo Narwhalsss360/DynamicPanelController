@@ -1,5 +1,4 @@
-﻿using Panel;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Profiling.ProfilingTypes.PanelItems
 {

@@ -3,8 +3,12 @@ using Panel;
 using Panel.Communication;
 using PanelExtension;
 using Profiling;
+using Profiling.ProfilingTypes.Mappings;
+using Profiling.ProfilingTypes.PanelItems;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -14,10 +18,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using Profiling.ProfilingTypes.Mappings;
-using Profiling.ProfilingTypes.PanelItems;
 
 namespace DynamicPanelController
 {
@@ -207,10 +207,9 @@ namespace DynamicPanelController
             SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
 
-        void ProfilesListChanged(object? Sender, NotifyCollectionChangedEventArgs Args)
+        private void ProfilesListChanged(object? Sender, NotifyCollectionChangedEventArgs Args)
         {
-            var Collection = Sender as ObservableCollection<PanelProfile>;
-            if (Collection is null)
+            if (Sender is not ObservableCollection<PanelProfile> Collection)
                 return;
 
             if (Args.Action == NotifyCollectionChangedAction.Remove)
@@ -239,7 +238,7 @@ namespace DynamicPanelController
                         if (NewItem is not PanelProfile NewProfile)
                             continue;
 
-                        for (int iName = 1; Collection.Any(Profile => ReferenceEquals(Profile, NewProfile) ? false : Profile.Name == NewProfile.Name); iName++)
+                        for (int iName = 1; Collection.Any(Profile => !ReferenceEquals(Profile, NewProfile) && Profile.Name == NewProfile.Name); iName++)
                             NewProfile.Name = $"{Collection[iItems].Name}({iName})";
                     }
                 }
@@ -258,7 +257,7 @@ namespace DynamicPanelController
                     if (NewObject is not PanelProfile NewProfile)
                         goto EndLoop;
 
-                    for (int iSearch = Args.NewItems.Count - 1; iSearch >= 0 ; iSearch--)
+                    for (int iSearch = Args.NewItems.Count - 1; iSearch >= 0; iSearch--)
                     {
                         if (iSearch == iNewItems)
                             continue;
@@ -282,8 +281,8 @@ namespace DynamicPanelController
                         if (ReferenceEquals(NewProfile, Collection[iItems]))
                             continue;
 
-                        for (int iName = 1; Collection.Any(Profile => ReferenceEquals(Profile, NewProfile) ? false : Profile.Name == NewProfile.Name); iName++)
-                                NewProfile.Name = $"{Collection[iItems].Name}({iName})";
+                        for (int iName = 1; Collection.Any(Profile => !ReferenceEquals(Profile, NewProfile) && Profile.Name == NewProfile.Name); iName++)
+                            NewProfile.Name = $"{Collection[iItems].Name}({iName})";
                     }
                 }
             }
@@ -555,7 +554,7 @@ namespace DynamicPanelController
                                 break;
                             }
                             EmulatorDisplay(SourceMapping.ID, OutString);
-                                
+
                             continue;
                         }
                     }
@@ -723,13 +722,13 @@ namespace DynamicPanelController
                 {
                     SelectIndex(i);
                     break;
-                }    
+                }
             }
         }
 
         public void RefreshProfiles()
         {
-            DirectoryInfo DirectoryInfo = new DirectoryInfo(Settings.ProfilesDirectory);
+            DirectoryInfo DirectoryInfo = new(Settings.ProfilesDirectory);
             foreach (var FileInfo in DirectoryInfo.GetFiles())
             {
                 if (FileInfo.Extension != ".json")
@@ -739,7 +738,7 @@ namespace DynamicPanelController
 
                 using (var ProfileStream = FileInfo.Open(FileMode.Open))
                     _ = ProfileStream.Read(FileBytes, 0, FileBytes.Length);
-                PanelProfile Profile = new PanelProfile(Encoding.UTF8.GetString(FileBytes), Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray(), out bool Result);
+                PanelProfile Profile = new(Encoding.UTF8.GetString(FileBytes), Actions.ToArray(), AbsoluteActions.ToArray(), Sources.ToArray(), out bool Result);
                 if (!Result)
                     continue;
 
@@ -750,14 +749,14 @@ namespace DynamicPanelController
                     {
                         FindIndex = i;
                         break;
-                    }    
+                    }
                 }
                 FileInfo.Delete();
                 if (FindIndex == -1)
                     break;
 
-                using (var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json"))
-                    ProfileFile.Write(Profile.Serialize());
+                using var ProfileFile = new StreamWriter($"{Settings.ProfilesDirectory}\\{Profile.Name}.json");
+                ProfileFile.Write(Profile.Serialize());
             }
             SortProfiles();
         }

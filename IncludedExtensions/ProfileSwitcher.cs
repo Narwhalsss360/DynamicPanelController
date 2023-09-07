@@ -9,7 +9,7 @@ namespace IncludedExtensions
         public static readonly string ProfileNameKey = "ProfileName";
         public const string CycleNextValue = "++";
         public const string CyclePreviousValue = "--";
-        Dictionary<string, string?> Options = new();
+        private Dictionary<string, string?> Options = new();
 
         public ProfileSwitcher()
             : base()
@@ -28,7 +28,7 @@ namespace IncludedExtensions
             if (Application.Profiles.Any(Profile => Profile.Name == Options[ProfileNameKey]))
                 return;
             Application?.Logger.Log(ILogger.Levels.Error, $"{Options[ProfileNameKey]} was not found in the profiles list, removing option.", "Profile Switcher");
-            Options.Remove(ProfileNameKey);
+            _ = Options.Remove(ProfileNameKey);
         }
 
         public string?[]?[]? ValidOptions()
@@ -80,7 +80,7 @@ namespace IncludedExtensions
                 int ProfileIndex = Array.FindIndex(Application.Profiles, Profile => Profile.Name == Options[ProfileNameKey]);
                 if (ProfileIndex < 0)
                 {
-                    Options.Remove(ProfileNameKey);
+                    _ = Options.Remove(ProfileNameKey);
                     return $"{Options[ProfileNameKey]} was not found in the profiles list, removing option.";
                 }
 

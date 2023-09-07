@@ -5,7 +5,6 @@ using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -19,7 +18,8 @@ namespace DynamicPanelController
         private bool PushedButtonSet = true;
         private bool DontInstantiate = false;
         private List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
-        int SelectedIndex = -1;
+
+        private readonly int SelectedIndex = -1;
 
         private readonly Dictionary<string, string?> EnteredOptions = new();
 
@@ -43,8 +43,7 @@ namespace DynamicPanelController
 
         private void WindowClosed(object? sender, EventArgs e)
         {
-            if (CustomDescriptorEditor is not null)
-                CustomDescriptorEditor.Close();
+            CustomDescriptorEditor?.Close();
         }
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
@@ -283,11 +282,11 @@ namespace DynamicPanelController
                 return;
 
             if (IsButton)
-                EditiedVersion.ActionMappings.RemoveAll(ActionMapping => ActionMapping.ID == ID);
+                _ = EditiedVersion.ActionMappings.RemoveAll(ActionMapping => ActionMapping.ID == ID);
             else if (IsAbsolute)
-                EditiedVersion.AbsoluteActionMappings.RemoveAll(AbsoluteActionMapping => AbsoluteActionMapping.ID == ID);
+                _ = EditiedVersion.AbsoluteActionMappings.RemoveAll(AbsoluteActionMapping => AbsoluteActionMapping.ID == ID);
             else if (IsSource)
-                EditiedVersion.SourceMappings.RemoveAll(SourceMapping => SourceMapping.ID == ID);
+                _ = EditiedVersion.SourceMappings.RemoveAll(SourceMapping => SourceMapping.ID == ID);
             PanelItemSelectorList.SelectedIndex = -1;
             OptionsSelectorList.Items.Refresh();
         }

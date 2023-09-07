@@ -37,12 +37,9 @@ namespace DynamicPanelController
 
         private void WindowClosed(object? sender, EventArgs e)
         {
-            if (SettingsWindow is not null)
-                SettingsWindow.Close();
-            if (EditorWindow is not null)
-                EditorWindow.Close();
-            if (EmulatorWindow is not null)
-                EmulatorWindow.Close();
+            SettingsWindow?.Close();
+            EditorWindow?.Close();
+            EmulatorWindow?.Close();
         }
 
         private void SwapToggleConnectionButtonText(object? Sender = null, EventArgs? Args = null)
@@ -79,8 +76,7 @@ namespace DynamicPanelController
         {
             PortSelection.IsEnabled = true;
             PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = "Connect"; });
-            if (EmulatorWindow is not null)
-                EmulatorWindow.Close();
+            EmulatorWindow?.Close();
         }
 
         private void EmulatorClosed(object? Sender, EventArgs Args)
@@ -106,7 +102,7 @@ namespace DynamicPanelController
         {
             PortSelection.Items.Clear();
             if (App.AllowEmulator)
-                PortSelection.Items.Add("Emulator");
+                _ = PortSelection.Items.Add("Emulator");
             foreach (var item in SerialPort.GetPortNames())
                 _ = PortSelection.Items.Add(item);
         }
@@ -168,7 +164,7 @@ namespace DynamicPanelController
 
         private void NewProfileButtonClicked(object? Sender, EventArgs Args)
         {
-            App.Profiles.Add(new PanelProfile() { Name = "New Profile"});
+            App.Profiles.Add(new PanelProfile() { Name = "New Profile" });
             App.SelectIndex(App.Profiles.Count - 1);
             UpdateProfileSelectionItems();
         }

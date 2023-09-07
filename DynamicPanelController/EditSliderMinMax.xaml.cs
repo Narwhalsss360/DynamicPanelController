@@ -30,7 +30,7 @@ namespace DynamicPanelController
             if (Validate())
                 Close();
             else
-                MessageBox.Show("Must enter a number.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show("Must enter a number.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

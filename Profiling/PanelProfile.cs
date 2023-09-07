@@ -2,7 +2,6 @@
 using Panel.Communication;
 using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
-using System;
 using System.Text.Json;
 
 namespace Profiling
@@ -66,7 +65,7 @@ namespace Profiling
                     if (Serialized.PushedActionMappingsOptions is not null)
                         if (Serialized.PushedActionMappingsOptions.ContainsKey(IDAction.Key))
                             if (Serialized.PushedActionMappingsOptions[IDAction.Key] is Dictionary<string, string?> Options)
-                                ActionMappings.Last().Action.SetOptions(Options);
+                                _ = ActionMappings.Last().Action.SetOptions(Options);
                 }
             }
 
@@ -83,7 +82,7 @@ namespace Profiling
                     if (Serialized.ReleasedActionMappingsOptions is not null)
                         if (Serialized.ReleasedActionMappingsOptions.ContainsKey(IDAction.Key))
                             if (Serialized.ReleasedActionMappingsOptions[IDAction.Key] is Dictionary<string, string?> Options)
-                                ActionMappings.Last().Action.SetOptions(Options);
+                                _ = ActionMappings.Last().Action.SetOptions(Options);
                 }
             }
 
@@ -100,7 +99,7 @@ namespace Profiling
                     if (Serialized.AbsoluteActionMappingsOptions is not null)
                         if (Serialized.AbsoluteActionMappingsOptions.ContainsKey(IDAbsoluteAction.Key))
                             if (Serialized.AbsoluteActionMappingsOptions[IDAbsoluteAction.Key] is Dictionary<string, string?> Options)
-                                AbsoluteActionMappings.Last().AbsoluteAction.SetOptions(Options);
+                                _ = AbsoluteActionMappings.Last().AbsoluteAction.SetOptions(Options);
                 }
             }
 
@@ -117,7 +116,7 @@ namespace Profiling
                     if (Serialized.SourceMappingsOptions is not null)
                         if (Serialized.SourceMappingsOptions.ContainsKey(IDSource.Key))
                             if (Serialized.SourceMappingsOptions[IDSource.Key] is Dictionary<string, string?> Options)
-                                SourceMappings.Last().Source.SetOptions(Options);
+                                _ = SourceMappings.Last().Source.SetOptions(Options);
                 }
             }
 
