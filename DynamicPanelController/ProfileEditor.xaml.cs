@@ -387,14 +387,17 @@ namespace DynamicPanelController
                 foreach (var OptionKeyValuePairs in ValidOptions)
                 {
                     if (OptionKeyValuePairs is null)
+                    {
+                        AllowsAnyKey = true;
                         continue;
+                    }
                     if (OptionKeyValuePairs[0] is not string Key)
                     {
                         AllowsAnyKey = true;
                         continue;
                     }
-
                     bool AllowsAnyValue = false;
+
                     List<string> ValidValues = new();
 
                     for (int i = 1; i < OptionKeyValuePairs.Length; i++)
@@ -408,27 +411,43 @@ namespace DynamicPanelController
                     }
                     OptionsKeyValuePairs.Add(Key, AllowsAnyValue ? null : ValidValues.ToArray());
                 }
+            if (Options is not null)
+            {
+                foreach (var KeyValuePair in Options)
+                {
+                    if (OptionsKeyValuePairs.ContainsKey(KeyValuePair.Key))
+                        continue;
+                    OptionsKeyValuePairs.Add(KeyValuePair.Key, new string[] {  });
+                }
+            }
 
             foreach (var KeyValuePair in OptionsKeyValuePairs)
             {
                 TextBlock Left = new() { Text = KeyValuePair.Key, Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
                 UIElement Right;
+                string? RightValue = "";
+
+                if (Options is not null)
+                    if (Options.ContainsKey(KeyValuePair.Key))
+                        RightValue = Options[KeyValuePair.Key];
+
                 if (KeyValuePair.Value is not null && KeyValuePair.Value.Length > 0)
                 {
+                    int IndexOfSelected = Array.IndexOf(KeyValuePair.Value, RightValue);
                     ComboBox RightComboBox = new()
                     {
                         ItemsSource = KeyValuePair.Value,
                         Margin = new Thickness(5),
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         VerticalAlignment = VerticalAlignment.Center,
-                        SelectedIndex = 0
+                        SelectedIndex = IndexOfSelected
                     };
                     RightComboBox.DropDownClosed += UpdateEnteredOptions;
                     Right = RightComboBox;
                 }
                 else
                 {
-                    TextBox RightTextBox = new() { Text = "", Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
+                    TextBox RightTextBox = new() { Text = RightValue, Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Center };
                     RightTextBox.LostFocus += UpdateEnteredOptions;
                     Right = RightTextBox;
                 }
