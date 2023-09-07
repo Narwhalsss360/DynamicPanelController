@@ -32,7 +32,7 @@ namespace PanelExtension
             {
                 public event EventHandler? LogChanged;
 
-                public string FormatMessage(ILogger.LogLevels? Level, object? Sender, string Message)
+                public string FormatMessage(ILogger.Levels? Level, object? Sender, string Message)
                 {
                     return string.Empty;
                 }
@@ -62,6 +62,7 @@ namespace PanelExtension
             public DateTime? LastLoad { get; private set; } = null;
             public ILogger Logger { get; private set; } = new DeadLog();
             public PanelProfile? CurrentProfile { get; private set; } = new();
+            public int CurrentProfileIndex { get; private set; } = -1;
             public PanelProfile[] Profiles { get; private set; } = new PanelProfile[0];
             public Type[] Actions { get; private set; } = new Type[0];
             public Type[] AbsoluteActions { get; private set; } = new Type[0];

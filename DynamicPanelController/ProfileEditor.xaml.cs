@@ -35,9 +35,16 @@ namespace DynamicPanelController
             }
 
             Loaded += WindowLoaded;
+            Closed += WindowClosed;
             this.SelectedIndex = SelectedIndex;
             EditiedVersion = App.Profiles[SelectedIndex];
             PanelProfileNameTextBlock.Text = EditiedVersion.Name;
+        }
+
+        private void WindowClosed(object? sender, EventArgs e)
+        {
+            if (CustomDescriptorEditor is not null)
+                CustomDescriptorEditor.Close();
         }
 
         private void WindowLoaded(object sender, RoutedEventArgs e)

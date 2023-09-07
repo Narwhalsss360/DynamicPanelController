@@ -2,7 +2,7 @@
 {
     public interface ILogger
     {
-        public enum LogLevels
+        public enum Levels
         {
             Verbose,
             Info,
@@ -12,27 +12,27 @@
 
         public event EventHandler? LogChanged;
 
-        public string FormatMessage(LogLevels? Level, object? Sender, string Message);
+        public string FormatMessage(Levels? Level, object? Sender, string Message);
         public void Verbose(string Message, object? Sender = null);
         public void Info(string Message, object? Sender = null);
         public void Warn(string Message, object? Sender = null);
         public void Error(string Message, object? Sender = null);
         public string GetLog();
 
-        public void Log(LogLevels Level, object? Sender, string Message)
+        public void Log(Levels Level, string Message, object? Sender)
         {
             switch (Level)
             {
-                case LogLevels.Verbose:
+                case Levels.Verbose:
                     Verbose(Message, Sender);
                     break;
-                case LogLevels.Info:
+                case Levels.Info:
                     Info(Message, Sender);
                     break;
-                case LogLevels.Warning:
+                case Levels.Warning:
                     Warn(Message, Sender);
                     break;
-                case LogLevels.Error:
+                case Levels.Error:
                     Error(Message, Sender);
                     break;
                 default:

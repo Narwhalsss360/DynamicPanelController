@@ -99,6 +99,13 @@ namespace DynamicPanelController
             Children.Add(SliderTitle);
             Children.Add(Slider);
             Children.Add(RangeButton);
+            Unloaded += ElementUnloaded;   
+        }
+
+        private void ElementUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (Editor is not null)
+                Editor.Close();
         }
 
         private void SliderMoved(object sender, RoutedPropertyChangedEventArgs<double> e)

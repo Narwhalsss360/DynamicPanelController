@@ -12,9 +12,7 @@ namespace DynamicPanelController
         private readonly ILogger Log = App.Logger;
         private ProfileEditor? EditorWindow = null;
         private PanelEmulator? EmulatorWindow = null;
-        private bool DontCallToggle = false;
         private bool IgnoreNextSelectionChange = true;
-
         private SettingsWindow? SettingsWindow { get; set; } = null;
 
         public LogWindow()
@@ -23,6 +21,7 @@ namespace DynamicPanelController
                 throw new Exception("Couldn't get current app.");
             InitializeComponent();
             Loaded += WindowLoaded;
+            Closed += WindowClosed;
             Log.LogChanged += ApplicationLogChanged;
             App.CommunicationsStarted += ApplicationStartedCommunicating;
             App.CommunicationsStopped += ApplicationStoppedCommunicating;
@@ -33,7 +32,17 @@ namespace DynamicPanelController
         {
             UpdateProfileSelectionItems();
             ProfileSelection.SelectedIndex = 0;
-            LogBox.Text = Log.GetLog();
+            ApplicationLogChanged(Sender, Args);
+        }
+
+        private void WindowClosed(object? sender, EventArgs e)
+        {
+            if (SettingsWindow is not null)
+                SettingsWindow.Close();
+            if (EditorWindow is not null)
+                EditorWindow.Close();
+            if (EmulatorWindow is not null)
+                EmulatorWindow.Close();
         }
 
         private void SwapToggleConnectionButtonText(object? Sender = null, EventArgs? Args = null)
@@ -195,23 +204,58 @@ namespace DynamicPanelController
         {
             if (SettingsWindow is not null)
                 return;
-            SettingsWindow = new SettingsWindow(App.Settings);
+            SettingsWindow = new SettingsWindow(App.Settings, SetSettings);
             SettingsWindow.Closed += SettingsWindowClosed;
             SettingsWindow.Show();
         }
 
+        private void SetSettings()
+        {
+            if (SettingsWindow is not null)
+            {
+                if (SettingsWindow.Validated)
+                    App.Settings = SettingsWindow.EditedSettings;
+                ApplicationLogChanged(this, new EventArgs());
+            }
+        }
+
         private void SettingsWindowClosed(object? Sender, EventArgs Args)
         {
-            if (SettingsWindow is null)
-                return;
-            if (SettingsWindow.Validated)
-                App.Settings = SettingsWindow.EditedSettings;
             SettingsWindow = null;
         }
 
         private void ApplicationLogChanged(object? Sender, EventArgs Args)
         {
-            _ = LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
+            if (App.Settings.LogLevel != ILogger.Levels.Verbose)
+            {
+                string LeveledLog = string.Empty;
+                string[] ExcludeLevelStrings = new string[(int)App.Settings.LogLevel];
+
+                for (int i = 0; i < ExcludeLevelStrings.Length; i++)
+                    ExcludeLevelStrings[i] = ((ILogger.Levels)i).ToString();
+
+                foreach (var LogLine in Log.GetLog().Split('\n'))
+                {
+                    bool Exclude = false;
+                    foreach (var ExcludeString in ExcludeLevelStrings)
+                    {
+                        if (LogLine.Contains(ExcludeString))
+                        {
+                            Exclude = true;
+                            break;
+                        }
+                    }
+                    if (Exclude)
+                        continue;
+                    LeveledLog += $"{LogLine}\n";
+                }
+
+                _ = LogBox.Dispatcher.Invoke(SetLogBoxText, LeveledLog);
+            }
+            else
+            {
+                _ = LogBox.Dispatcher.Invoke(SetLogBoxText, Log.GetLog());
+            }
         }
     }
 }

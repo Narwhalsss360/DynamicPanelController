@@ -83,7 +83,8 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Row="0" Margin="5" Grid.ColumnSpan="2" Content="Global Panel Descriptor Editor" Click="EditDescriptorClicked"/>
+            <Button Margin="5" Grid.ColumnSpan="2" Content="Global Panel Descriptor Editor" Click="EditDescriptorClicked"/>
+            <ComboBox x:Name="LogLevelSelector"  Grid.Column="2" Margin="5" DropDownClosed="LogLevelSelectorClosed" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
             <Button x:Name="OKButton" Grid.Column="3" Content="OK" Margin="5" Click="OKClicked"/>
             <Button x:Name="CancelButton" Grid.Column="4" Content="Cancel" Margin="5" Click="CancelClicked"/>
             <Button x:Name="ApplyButton" Grid.Column="5" Content="Apply" Margin="5" Click="ApplyClicked"/>

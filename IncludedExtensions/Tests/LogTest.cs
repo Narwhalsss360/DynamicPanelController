@@ -8,7 +8,7 @@ namespace IncludedExtensions.Tests
     {
         public object? Do()
         {
-            Application?.Logger.Info("Test action ran.", "Log Test Action");
+            Application?.Logger.Log(ILogger.Levels.Info, "Test action ran.", "Log Test Action");
             return null;
         }
     }

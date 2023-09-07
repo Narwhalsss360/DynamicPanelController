@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PanelExtension;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 
@@ -14,13 +15,23 @@ namespace DynamicPanelController
         private PanelDescriptorEditor? DescriptorEditor;
         public bool Validated = false;
 
-        public SettingsWindow(App.AppSettings? SettingsTemplate = null)
+        public delegate void SetSettings();
+
+        public SetSettings? SettingsSetter;
+
+        public SettingsWindow(App.AppSettings? SettingsTemplate = null, SetSettings? SettingsSetter = null)
         {
-            InitializeComponent();
             EditedSettings = SettingsTemplate ?? new App.AppSettings();
+            this.SettingsSetter = SettingsSetter;
+            InitializeComponent();
             Loaded += WindowLoaded;
-            foreach (var Pair in EditedSettings.GlobalSettings)
-                Options.Add(new(EditedSettings.GlobalSettings, Pair.Key, Pair.Value));
+            Closed += WindowClosed;
+        }
+
+        private void WindowClosed(object? sender, EventArgs e)
+        {
+            if (DescriptorEditor is not null)
+                DescriptorEditor.Close();
         }
 
         private string? VerifyValid()
@@ -39,6 +50,8 @@ namespace DynamicPanelController
                 _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            if (SettingsSetter is not null)
+                SettingsSetter();
             Close();
         }
 
@@ -55,7 +68,8 @@ namespace DynamicPanelController
                 _ = MessageBox.Show(ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            App.Settings = EditedSettings;
+            if (SettingsSetter is not null)
+                SettingsSetter();
         }
 
         private void GlobalOptionSelected(object? Sender, EventArgs Args)
@@ -109,6 +123,16 @@ namespace DynamicPanelController
             foreach (var KVP in EditedSettings.GlobalSettings)
                 Options.Add(new(EditedSettings.GlobalSettings, KVP.Key, KVP.Value));
             GlobalOptionsPanel.ItemsSource = Options;
+            for (int i = 0; i <= (int)ILogger.Levels.Error; i++)
+                LogLevelSelector.Items.Add((ILogger.Levels)i);
+            LogLevelSelector.SelectedIndex = (int)EditedSettings.LogLevel;
+        }
+
+        private void LogLevelSelectorClosed(object sender, EventArgs e)
+        {
+            if (LogLevelSelector.SelectedIndex == -1)
+                LogLevelSelector.SelectedIndex = 0;
+            EditedSettings.LogLevel = (ILogger.Levels)LogLevelSelector.SelectedIndex;
         }
     }
 }

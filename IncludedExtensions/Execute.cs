@@ -36,13 +36,13 @@ namespace IncludedExtensions
         {
             if (ProgramPath is null)
             {
-                Application?.Logger.Error("No program path specified.", "Execute");
+                Application?.Logger.Log(ILogger.Levels.Error, "No program path specified.", "Execute");
                 return null;
             }
 
             if (!File.Exists(ProgramPath))
             {
-                Application?.Logger.Error($"\"{ProgramPath}\" Doesn't exist.", "Execute");
+                Application?.Logger.Log(ILogger.Levels.Error, $"\"{ProgramPath}\" Doesn't exist.", "Execute");
                 return null;
             }
 
@@ -51,7 +51,6 @@ namespace IncludedExtensions
             try
             {
                 Process.Start(ProgramPath);
-
             }
             catch (Win32Exception E)
             {
@@ -67,7 +66,7 @@ namespace IncludedExtensions
             }
 
             if (Caught is not null)
-                Application?.Logger.Error($"An error occured trying to execute {ProgramPath}. {Caught}", "Execute");
+                Application?.Logger.Log(ILogger.Levels.Error, $"An error occured trying to execute {ProgramPath}. {Caught}", "Execute");
             return Caught;
         }
     }
