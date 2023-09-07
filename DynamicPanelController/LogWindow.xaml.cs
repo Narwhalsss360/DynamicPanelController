@@ -68,15 +68,15 @@ namespace DynamicPanelController
 
         private void ApplicationStartedCommunicating(object? Sender, EventArgs Args)
         {
-            PortSelection.IsEnabled = false;
+            PortSelection.Dispatcher.Invoke(() => { PortSelection.IsEnabled = false; });
             PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = "Disconnect"; });
         }
 
         private void ApplicationStoppedCommunicating(object? Sender, EventArgs Args)
         {
-            PortSelection.IsEnabled = true;
+            PortSelection.Dispatcher.Invoke(() => { PortSelection.IsEnabled = true; });
             PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = "Connect"; });
-            EmulatorWindow?.Close();
+            EmulatorWindow?.Dispatcher.Invoke(() => { EmulatorWindow.Close(); });
         }
 
         private void EmulatorClosed(object? Sender, EventArgs Args)
