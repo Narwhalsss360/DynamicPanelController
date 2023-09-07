@@ -326,6 +326,19 @@ namespace DynamicPanelController
             }
         }
 
+        private string? TestInstantiation(Type Type)
+        {
+            try
+            {
+                Activator.CreateInstance(Type);
+            }
+            catch (Exception E)
+            {
+                return E.Message;
+            }
+            return null;
+        }
+
         private int LoadExtension(Assembly AssemblyToLoad, string? ModuleName)
         {
             if (!AssemblyToLoad.CustomAttributes.Any(Attr => Attr.AttributeType == typeof(PanelAssemblyAttribute)))
@@ -387,6 +400,12 @@ namespace DynamicPanelController
                             Logger.Log(ILogger.Levels.Error, $"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelAbsoluteActionDescriptorAttribute.", "Program");
                             continue;
                         }
+                        if (TestInstantiation(Type) is string ExceptionMessage)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Cannot instantiate extension {Type.Name}.\n{ExceptionMessage}", "Program");
+                            return -4;
+                        }
+
                         AbsoluteActions.Add(Type);
                         ExtensionsLoaded++;
                         Logger.Log(ILogger.Levels.Verbose, $"Loaded Absolute Action {Type.FullName}", "Program");
@@ -398,6 +417,12 @@ namespace DynamicPanelController
                             Logger.Log(ILogger.Levels.Error, $"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.", "Program");
                             continue;
                         }
+                        if (TestInstantiation(Type) is string ExceptionMessage)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Cannot instantiate extension {Type.Name}.\n{ExceptionMessage}", "Program");
+                            return -4;
+                        }
+
                         Actions.Add(Type);
                         ExtensionsLoaded++;
                         Logger.Log(ILogger.Levels.Verbose, $"Loaded Action {Type.FullName}", "Program");
@@ -409,6 +434,12 @@ namespace DynamicPanelController
                             Logger.Log(ILogger.Levels.Error, $"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.", "Program");
                             continue;
                         }
+                        if (TestInstantiation(Type) is string ExceptionMessage)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Cannot instantiate extension {Type.Name}.\n{ExceptionMessage}", "Program");
+                            return -4;
+                        }
+
                         Sources.Add(Type);
                         ExtensionsLoaded++;
                         Logger.Log(ILogger.Levels.Verbose, $"Loaded Source {Type.FullName}", "Program");
