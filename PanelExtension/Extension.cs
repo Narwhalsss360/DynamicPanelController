@@ -5,7 +5,7 @@ namespace PanelExtension
 {
     public delegate int ExtensionLoader(Assembly AssemblyToLoad, string? ModuleName);
     public delegate void ExtensionRefresher(Extension? Instance = null);
-    public delegate void SelectProfileIndex(int Index);
+    public delegate void ProfileIndexSelector(int Index);
     public delegate object? PanelExtensionSubscriber(Extension Instance);
     public delegate object? PanelExtensionUnsubscriber(Extension Instance);
 
@@ -15,7 +15,7 @@ namespace PanelExtension
         private static PanelExtensionUnsubscriber? Unsubscriber { get; set; }
         private static ExtensionLoader? ExtensionLoader { get; set; }
         private static ExtensionRefresher? Refresher { get; set; }
-        private static SelectProfileIndex? IndexSelector { get; set; }
+        private static ProfileIndexSelector? SelectProfileIndex { get; set; }
 
         public bool ExtensionSubscribed { get; private set; } = false;
         public object? ExtensionSubscriptionResult { get; private set; } = null;
@@ -32,8 +32,9 @@ namespace PanelExtension
             {
                 public event EventHandler? LogChanged;
 
-                public void Error(string Message)
+                public string FormatMessage(ILogger.LogLevels? Level, object? Sender, string Message)
                 {
+                    return string.Empty;
                 }
 
                 public string GetLog()
@@ -41,11 +42,19 @@ namespace PanelExtension
                     return string.Empty;
                 }
 
-                public void Info(string Message)
+                public void Verbose(string Message, object? Sender = null)
                 {
                 }
 
-                public void Warn(string Message)
+                public void Info(string Message, object? Sender)
+                {
+                }
+
+                public void Warn(string Message, object? Sender)
+                {
+                }
+
+                public void Error(string Message, object? Sender)
                 {
                 }
             }
@@ -112,7 +121,7 @@ namespace PanelExtension
 
         public static void SelectIndex(int Index)
         {
-            IndexSelector?.Invoke(Index);
+            SelectProfileIndex?.Invoke(Index);
         }
 
         protected object? TryUnsubscribe()

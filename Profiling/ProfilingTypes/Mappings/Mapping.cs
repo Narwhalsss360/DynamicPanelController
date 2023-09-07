@@ -1,6 +1,9 @@
-﻿namespace Profiling.ProfilingTypes
+﻿using Profiling.ProfilingTypes.PanelItems;
+
+namespace Profiling.ProfilingTypes.Mappings
 {
-    public class Mapping
+    [PanelItemDescriptor("Mapping Base", typeof(Mapping))]
+    public class Mapping : IPanelItem
     {
         public byte ID { get; set; }
     }

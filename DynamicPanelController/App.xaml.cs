@@ -3,7 +3,6 @@ using Panel;
 using Panel.Communication;
 using PanelExtension;
 using Profiling;
-using Profiling.ProfilingTypes;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,8 +16,8 @@ using System.Threading;
 using System.Windows;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Runtime.CompilerServices;
-using System.Windows.Controls;
+using Profiling.ProfilingTypes.Mappings;
+using Profiling.ProfilingTypes.PanelItems;
 
 namespace DynamicPanelController
 {
@@ -27,17 +26,19 @@ namespace DynamicPanelController
     public partial class App : Application
     {
         public ObservableCollection<PanelProfile> Profiles = new();
+        public int SelectedProfileIndexContainer;
+
         public int SelectedProfileIndex
         {
             get
             {
-                return SelectedProfileIndex;
+                return SelectedProfileIndexContainer;
             }
             set
             {
                 if (value >= Profiles.Count)
                     return;
-                SelectedProfileIndex = value;
+                SelectedProfileIndexContainer = value;
                 SelectedProfileChanged?.Invoke(this, new EventArgs());
                 PanelExtensions.ForEach(E => InvokeMethod<Extension>("SelectedProfileChangedWrapper", new object[] { this, new EventArgs() }, E));
             }
@@ -133,30 +134,44 @@ namespace DynamicPanelController
             public string CurrentLog { get; private set; } = string.Empty;
             public event EventHandler? LogChanged;
 
-            public void Info(string Message)
+            public string FormatMessage(ILogger.LogLevels? Level, object? Sender, string Message)
+            {
+                return $"{DateTime.Now:HH:mm} {(Sender is null ? "" : $"[{Level}]")}{(Sender is null ? "" : $"[{Level}]")}: {Message}";
+            }
+
+            public void Verbose(string Message, object? Sender = null)
             {
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now:HH:mm} [Info] {Message}";
+                CurrentLog += FormatMessage(ILogger.LogLevels.Verbose, Sender, Message);
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
-            public void Warn(string Message)
+            public void Info(string Message, object? Sender = null)
             {
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now:HH:mm} [Warning] {Message}";
+                CurrentLog += FormatMessage(ILogger.LogLevels.Info, Sender, Message);
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
-            public void Error(string Message)
+            public void Warn(string Message, object? Sender = null)
             {
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += $"{DateTime.Now:HH:mm} [Error] {Message}";
+                CurrentLog += FormatMessage(ILogger.LogLevels.Warning, Sender, Message);
+                LogChanged?.Invoke(this, new EventArgs());
+            }
+
+            public void Error(string Message, object? Sender = null)
+            {
+                if (CurrentLog.Length > 0)
+                    if (CurrentLog.Last() is not ('\r' or '\n'))
+                        CurrentLog += '\n';
+                CurrentLog += FormatMessage(ILogger.LogLevels.Error, Sender, Message);
                 LogChanged?.Invoke(this, new EventArgs());
             }
 
@@ -196,7 +211,7 @@ namespace DynamicPanelController
                     Collection.Add(new PanelProfile() { Name = "New Profile" });
 
                 if (SelectedProfileIndex >= Collection.Count)
-                    SelectedProfileIndex = 0;
+                    SelectIndex(0);
             }
             else if (Args.Action == NotifyCollectionChangedAction.Add)
             {
@@ -270,7 +285,7 @@ namespace DynamicPanelController
 
         private void ApplicationStarting(object Sender, EventArgs Args)
         {
-            Logger.Info("Program starting");
+            Logger.Info("Program starting", "Program");
             LoadSettings();
             SetProperty<Extension>("Subscriber", (PanelExtensionSubscriber)SubscribePanelExtension);
             SetProperty<Extension>("Unsubscriber", (PanelExtensionUnsubscriber)UnsubscribePanelExtension);
@@ -278,6 +293,7 @@ namespace DynamicPanelController
             LoadExtensionsFromDirectory();
             SetProperty<Extension>("ExtensionLoader", (ExtensionLoader)LoadExtension);
             SetProperty<Extension>("Refresher", (ExtensionRefresher)RefreshPanelExtension);
+            SetProperty<Extension>("SelectProfileIndex", (ProfileIndexSelector)SelectIndex);
             LoadProfiles();
         }
 
@@ -315,7 +331,7 @@ namespace DynamicPanelController
                 }
                 catch (ReflectionTypeLoadException E)
                 {
-                    Logger.Error($"Couldn't load {AssemblyToLoad.FullName}. {E.Message}");
+                    Logger.Error($"Couldn't load {AssemblyToLoad.FullName}. {E.Message}", "Program");
                     return -1;
                 }
             }
@@ -331,14 +347,14 @@ namespace DynamicPanelController
                 }
                 catch (ReflectionTypeLoadException E)
                 {
-                    Logger.Error($"Couldn't load {Module.Name}. {E.Message}");
+                    Logger.Error($"Couldn't load {Module.Name}. {E.Message}", "Program");
                     return -1;
                 }
             }
 
             if (Types is null)
             {
-                Logger.Error($"Couldn't load assembly {AssemblyToLoad.FullName}");
+                Logger.Error($"Couldn't load assembly {AssemblyToLoad.FullName}", "Program");
                 return -3;
             }
 
@@ -352,39 +368,39 @@ namespace DynamicPanelController
                     {
                         if (Type.GetCustomAttribute<PanelAbsoluteActionDescriptorAttribute>() is null)
                         {
-                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelAbsoluteActionDescriptorAttribute.");
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelAbsoluteActionDescriptorAttribute.", "Program");
                             continue;
                         }
                         AbsoluteActions.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Info($"Loaded Absolute Action {Type.FullName}");
+                        Logger.Info($"Loaded Absolute Action {Type.FullName}", "Program");
                     }
                     else if (Interface == typeof(IPanelAction))
                     {
                         if (Type.GetCustomAttribute<PanelActionDescriptorAttribute>() is null)
                         {
-                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.");
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelActionDescriptorAttribute.", "Program");
                             continue;
                         }
                         Actions.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Info($"Loaded Action {Type.FullName}");
+                        Logger.Info($"Loaded Action {Type.FullName}", "Program");
                     }
                     else if (Interface == typeof(IPanelSource))
                     {
                         if (Type.GetCustomAttribute<PanelSourceDescriptorAttribute>() is null)
                         {
-                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.");
+                            Logger.Error($"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelSourceDescriptorAttribute.", "Program");
                             continue;
                         }
                         Sources.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Info($"Loaded Source {Type.FullName}");
+                        Logger.Info($"Loaded Source {Type.FullName}", "Program");
                     }
                 }
             }
             if (ExtensionsLoaded > 0)
-                Logger.Info($"Loaded {ExtensionsLoaded} from {AssemblyToLoad.FullName}");
+                Logger.Info($"Loaded {ExtensionsLoaded} from {AssemblyToLoad.FullName}", "Program");
             return ExtensionsLoaded;
         }
 
@@ -423,7 +439,7 @@ namespace DynamicPanelController
         {
             if (!File.Exists(Settings.FilePath))
             {
-                Logger.Error($"Could not find settings file @ {Settings.FilePath}");
+                Logger.Error($"Could not find settings file @ {Settings.FilePath}", "Program");
                 return;
             }
 
@@ -435,7 +451,7 @@ namespace DynamicPanelController
             }
             catch (JsonException Ex)
             {
-                Logger.Error($"Exception occured while loading settings {Ex.Message}. Loading default settings.");
+                Logger.Error($"Exception occured while loading settings {Ex.Message}. Loading default settings.", "Program");
             }
             if (Deserialized is not null)
                 Settings = new(Deserialized);
@@ -446,6 +462,7 @@ namespace DynamicPanelController
             if (PanelExtensions.Contains(Extension))
                 return "Already subscribed.";
             PanelExtensions.Add(Extension);
+            SetPanelExtensionVariables(Extension);
             return null;
         }
 
@@ -455,7 +472,7 @@ namespace DynamicPanelController
             SetProperty<Extension.ApplicationVariables>("LastLoad", DateTime.Now, Variables);
             SetProperty<Extension.ApplicationVariables>("Logger", Logger, Variables);
             SetProperty<Extension.ApplicationVariables>("CurrentProfile", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
-            SetProperty<Extension.ApplicationVariables>("Profiles", SelectedProfileIndex == -1 ? null : Profiles[SelectedProfileIndex], Variables);
+            SetProperty<Extension.ApplicationVariables>("Profiles", Profiles.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("Actions", Actions.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
@@ -487,11 +504,11 @@ namespace DynamicPanelController
             Emulating = Emulate;
             if (Emulate)
             {
-                Logger.Info($"Starting emulation.");
+                Logger.Info($"Starting emulation.", "Program");
             }
             else
             {
-                Logger.Info($"Starting communications on port {Port.PortName}.");
+                Logger.Info($"Starting communications on port {Port.PortName}.", "Program");
                 Port.Open();
             }
             SuspendSendThread = false;
@@ -548,7 +565,7 @@ namespace DynamicPanelController
                         }
                         catch (Exception)
                         {
-                            Logger.Error($"Device on port {Port.PortName} disconnected.");
+                            Logger.Error($"Device on port {Port.PortName} disconnected.", "Program");
                             StopPortCommunication();
                             break;
                         }
@@ -568,11 +585,11 @@ namespace DynamicPanelController
             SuspendSendThread = true;
             if (Emulating)
             {
-                Logger.Info($"Stopping emulation.");
+                Logger.Info($"Stopping emulation.", "Program");
             }
             else
             {
-                Logger.Info($"Stopping communications on port {Port.PortName}");
+                Logger.Info($"Stopping communications on port {Port.PortName}", "Program");
                 Port.Close();
             }
             CommunicationsStopped?.Invoke(this, new EventArgs());
@@ -588,21 +605,21 @@ namespace DynamicPanelController
                 case MessageReceiveIDs.ButtonStateUpdate:
                     if (State is not ButtonUpdateStates UpdateState)
                         return;
-                    Logger.Info($"Button {ID} was {UpdateState}");
+                    Logger.Info($"Button {ID} was {UpdateState}", "Program");
 
                     if (SelectedProfileIndex == -1)
                         return;
                     if (Profiles[SelectedProfileIndex].ActionMappings.Find(Mapping => Mapping.ID == ID && Mapping.UpdateState == UpdateState) is not ActionMapping ActionMapping)
                         return;
 
-                    Logger.Info($"Doing action {ActionMapping.Action.GetDescriptorAttribute()?.Name}.");
+                    Logger.Info($"Doing action {ActionMapping.Action.GetDescriptorAttribute()?.Name}.", "Program");
                     object? ActionResult = ActionMapping.Action.Do();
                     if (ActionResult is string ResultString)
-                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}");
+                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ResultString}", "Program");
                     else if (ActionResult is Exception ActionResultException)
-                        Logger.Error($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResultException.Message}");
+                        Logger.Error($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResultException.Message}", "Program");
                     else if (ActionResult is not null)
-                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResult}");
+                        Logger.Warn($"{ActionMapping.Action.GetDescriptorAttribute()?.Name} -> {ActionResult}", "Program");
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
                     if (State is not double)
@@ -615,14 +632,14 @@ namespace DynamicPanelController
                     if (Profiles[SelectedProfileIndex].AbsoluteActionMappings.Find(Mapping => Mapping.ID == ID) is not AbsoluteActionMapping AbsoluteActionMapping)
                         return;
 
-                    Logger.Info($"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {StateDouble}");
+                    Logger.Info($"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {StateDouble}", "Program");
                     object? AbsoluteActionResult = AbsoluteActionMapping.AbsoluteAction.Set(StateDouble);
                     if (AbsoluteActionResult is string AbsoluteResultString)
-                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultString}");
+                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultString}", "Program");
                     else if (AbsoluteActionResult is Exception AbsoluteResultException)
-                        Logger.Error($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultException.Message}");
+                        Logger.Error($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteResultException.Message}", "Program");
                     else if (AbsoluteActionResult is not null)
-                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteActionResult}");
+                        Logger.Warn($"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {AbsoluteActionResult}", "Program");
                     break;
                 default:
                     break;
@@ -640,7 +657,7 @@ namespace DynamicPanelController
                 case MessageReceiveIDs.ButtonStateUpdate:
                     if (ReceivedMessage.MessageSize < 2)
                     {
-                        Logger.Error("Did not receive button state, only button ID.");
+                        Logger.Error("Did not receive button state, only button ID.", "Program");
                         break;
                     }
 
@@ -680,7 +697,7 @@ namespace DynamicPanelController
             {
                 if (ReferenceEquals(Selected, Profiles[i]))
                 {
-                    SelectedProfileIndex = i;
+                    SelectIndex(i);
                     break;
                 }    
             }
@@ -729,7 +746,7 @@ namespace DynamicPanelController
                     ProfileFile.Write(Profile.Serialize());
         }
 
-        private void SelectIndex(int Index)
+        public void SelectIndex(int Index)
         {
             SelectedProfileIndex = Index;
         }
@@ -739,7 +756,7 @@ namespace DynamicPanelController
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
             PanelExtensions.ForEach(E => InvokeMethod<Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
-            Logger.Info("Program exiting...");
+            Logger.Info("Program exiting...", "Program");
             SaveSettings();
             SaveProfiles();
             using var LogFile = new StreamWriter(Settings.LogDirectory, true);
@@ -757,7 +774,7 @@ namespace DynamicPanelController
 
         private static void SetProperty<ClassType>(string PropertyName, object? Value, object? Instance = null)
         {
-            typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : 0))?.SetValue(Instance, Value);
+            typeof(ClassType).GetProperty(PropertyName, BindingFlags.NonPublic | BindingFlags.Public | (Instance is null ? BindingFlags.Static : BindingFlags.Instance))?.SetValue(Instance, Value);
         }
     }
 }

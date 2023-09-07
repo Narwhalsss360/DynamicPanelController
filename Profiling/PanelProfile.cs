@@ -1,6 +1,7 @@
 ﻿using Panel;
 using Panel.Communication;
-using Profiling.ProfilingTypes;
+using Profiling.ProfilingTypes.Mappings;
+using Profiling.ProfilingTypes.PanelItems;
 using System;
 using System.Text.Json;
 

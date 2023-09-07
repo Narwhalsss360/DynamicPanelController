@@ -1,5 +1,5 @@
 ﻿using PanelExtension;
-using Profiling.ProfilingTypes;
+using Profiling.ProfilingTypes.PanelItems;
 
 namespace IncludedExtensions
 {
@@ -23,7 +23,7 @@ namespace IncludedExtensions
                 return;
             if (Application.Profiles.Any(Profile => Profile.Name == Options[ProfileNameKey]))
                 return;
-            Application?.Logger.Error($"{Options[ProfileNameKey]} was not found in the profiles list, removing option.");
+            Application?.Logger.Error($"{Options[ProfileNameKey]} was not found in the profiles list, removing option.", "Profile Switcher");
             Options.Remove(ProfileNameKey);
         }
 
@@ -49,7 +49,7 @@ namespace IncludedExtensions
             return Options;
         }
 
-        object? Do(object? Arguments = null)
+        public object? Do(object? Arguments = null)
         {
             if (!Options.ContainsKey(ProfileNameKey))
             {
@@ -57,14 +57,16 @@ namespace IncludedExtensions
             }
 
             if (Application is null)
-                return "Application is not subscribed.";
-            if (!Application.Profiles.Any(Profile => Profile.Name == Options[ProfileNameKey]))
+                return "Application is null.";
+
+            int ProfileIndex = Array.FindIndex(Application.Profiles, Profile => Profile.Name == Options[ProfileNameKey]);
+            if (ProfileIndex < 0)
             {
                 Options.Remove(ProfileNameKey);
                 return $"{Options[ProfileNameKey]} was not found in the profiles list, removing option.";
             }
 
-
+            SelectIndex(ProfileIndex);
 
             return null;
         }

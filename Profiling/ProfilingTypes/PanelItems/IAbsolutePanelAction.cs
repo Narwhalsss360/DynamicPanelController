@@ -1,10 +1,12 @@
-﻿using System.Reflection;
+﻿using Panel;
+using System.Reflection;
 
-namespace Profiling.ProfilingTypes
+namespace Profiling.ProfilingTypes.PanelItems
 {
-    public class PanelAbsoluteActionDescriptorAttribute : PanelActionDescriptorAttribute
+    public class PanelAbsoluteActionDescriptorAttribute : PanelItemDescriptorAttribute
     {
-        public PanelAbsoluteActionDescriptorAttribute(string Name) : base(Name)
+        public PanelAbsoluteActionDescriptorAttribute(string Name)
+            : base(Name, typeof(IAbsolutePanelAction))
         {
         }
     }

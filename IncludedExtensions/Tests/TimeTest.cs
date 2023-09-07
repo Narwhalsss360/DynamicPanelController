@@ -1,4 +1,4 @@
-﻿using Profiling.ProfilingTypes;
+﻿using Profiling.ProfilingTypes.PanelItems;
 
 namespace IncludedExtensions.Tests
 {

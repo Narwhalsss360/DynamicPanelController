@@ -1,6 +1,7 @@
 ﻿using Panel.Communication;
+using Profiling.ProfilingTypes.PanelItems;
 
-namespace Profiling.ProfilingTypes
+namespace Profiling.ProfilingTypes.Mappings
 {
     public class ActionMapping : Mapping
     {

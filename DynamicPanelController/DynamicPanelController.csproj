@@ -18,4 +18,10 @@
     <ProjectReference Include="..\Profiling\Profiling.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="AssemblyInfo.cs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
 </Project>

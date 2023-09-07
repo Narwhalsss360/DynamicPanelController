@@ -1,14 +1,12 @@
 ﻿using System.Reflection;
 
-namespace Profiling.ProfilingTypes
+namespace Profiling.ProfilingTypes.PanelItems
 {
-    public class PanelActionDescriptorAttribute : Attribute
+    public class PanelActionDescriptorAttribute : PanelItemDescriptorAttribute
     {
-        public string Name;
-
         public PanelActionDescriptorAttribute(string Name)
+            : base(Name, typeof(IPanelItem))
         {
-            this.Name = Name;
         }
     }
 

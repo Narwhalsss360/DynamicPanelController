@@ -1,7 +1,7 @@
-﻿using Profiling.ProfilingTypes;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using PanelExtension;
+using Profiling.ProfilingTypes.PanelItems;
 
 namespace IncludedExtensions
 {
@@ -36,13 +36,13 @@ namespace IncludedExtensions
         {
             if (ProgramPath is null)
             {
-                Application?.Logger.Error("No program path specified.");
+                Application?.Logger.Error("No program path specified.", "Execute");
                 return null;
             }
 
             if (!File.Exists(ProgramPath))
             {
-                Application?.Logger.Error($"\"{ProgramPath}\" Doesn't exist.");
+                Application?.Logger.Error($"\"{ProgramPath}\" Doesn't exist.", "Execute");
                 return null;
             }
 
@@ -67,7 +67,7 @@ namespace IncludedExtensions
             }
 
             if (Caught is not null)
-                Application?.Logger.Error($"An error occured trying to execute {ProgramPath}. {Caught}");
+                Application?.Logger.Error($"An error occured trying to execute {ProgramPath}. {Caught}", "Execute");
             return Caught;
         }
     }

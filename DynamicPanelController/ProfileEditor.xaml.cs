@@ -1,7 +1,8 @@
 ﻿using Panel;
 using Panel.Communication;
 using Profiling;
-using Profiling.ProfilingTypes;
+using Profiling.ProfilingTypes.Mappings;
+using Profiling.ProfilingTypes.PanelItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -331,24 +332,39 @@ namespace DynamicPanelController
 
             string? Warning = null;
 
+            IPanelItem? CurrentPanelItem = null;
+
             if (IsButton)
             {
                 if (EditiedVersion.ActionMappings.Find(A => A.ID == ID && A.UpdateState == PushedButtonSet.ToPushedButtonUpdateState()) is ActionMapping ActionMapping)
+                {
                     Warning = ActionMapping.Action.SetOptions(EnteredOptions);
+                    CurrentPanelItem = ActionMapping.Action;
+                }
             }
             else if (IsAbsolute)
             {
                 if (EditiedVersion.AbsoluteActionMappings.Find(A => A.ID == ID) is AbsoluteActionMapping AbsoluteActionMapping)
+                {
                     Warning = AbsoluteActionMapping.AbsoluteAction.SetOptions(EnteredOptions);
+                    CurrentPanelItem = AbsoluteActionMapping.AbsoluteAction;
+                }
             }
             else
             {
                 if (EditiedVersion.SourceMappings.Find(S => S.ID == ID) is SourceMapping SourceMapping)
+                {
                     Warning = SourceMapping.Source.SetOptions(EnteredOptions);
+                    CurrentPanelItem = SourceMapping.Source;
+                }
             }
 
             if (Warning is not null)
-                _ = MessageBox.Show(Warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            {
+                _ = MessageBox.Show($"There was a problem setting the options for {CurrentPanelItem?.GetPanelItemDescriptor()?.Name}:\n{Warning}", "Warning. There was a problem setting options.", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (CurrentPanelItem is not null)
+                    LoadActionOptions(CurrentPanelItem);
+            }
 
             OptionsSelectorList.Items.Refresh();
         }

@@ -1,4 +1,6 @@
-﻿namespace Profiling.ProfilingTypes
+﻿using Profiling.ProfilingTypes.PanelItems;
+
+namespace Profiling.ProfilingTypes.Mappings
 {
     public class SourceMapping : Mapping
     {

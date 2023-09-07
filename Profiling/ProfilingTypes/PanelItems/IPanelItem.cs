@@ -1,6 +1,20 @@
 ﻿using System.Reflection;
-namespace Profiling.ProfilingTypes
+
+namespace Profiling.ProfilingTypes.PanelItems
 {
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
+    public class PanelItemDescriptorAttribute : Attribute
+    {
+        public readonly string Name;
+        Type? IPanelItemImplementor;
+
+        public PanelItemDescriptorAttribute(string Name, Type? IPanelItemImplementor = null)
+        {
+            this.Name = Name;
+            this.IPanelItemImplementor = IPanelItemImplementor;
+        }
+    }
+
     public interface IPanelItem
     {
         public string?[]?[]? ValidOptions()
@@ -34,6 +48,16 @@ namespace Profiling.ProfilingTypes
         public static PanelSourceDescriptorAttribute? GetPanelSourceDescriptor(this Type T)
         {
             return T.GetCustomAttribute<PanelSourceDescriptorAttribute>();
+        }
+
+        public static PanelItemDescriptorAttribute? GetPanelItemDescriptor(this Type T)
+        {
+            return T.GetCustomAttribute<PanelItemDescriptorAttribute>();
+        }
+
+        public static PanelItemDescriptorAttribute? GetPanelItemDescriptor(this object PanelItem)
+        {
+            return PanelItem.GetType().GetCustomAttribute<PanelItemDescriptorAttribute>();
         }
     }
 }

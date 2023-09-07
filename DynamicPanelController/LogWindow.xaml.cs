@@ -1,9 +1,7 @@
 ﻿using PanelExtension;
 using Profiling;
 using System;
-using System.DirectoryServices;
 using System.IO.Ports;
-using System.Linq;
 using System.Windows;
 
 namespace DynamicPanelController
@@ -15,6 +13,7 @@ namespace DynamicPanelController
         private ProfileEditor? EditorWindow = null;
         private PanelEmulator? EmulatorWindow = null;
         private bool DontCallToggle = false;
+        private bool IgnoreNextSelectionChange = true;
 
         private SettingsWindow? SettingsWindow { get; set; } = null;
 
@@ -25,9 +24,9 @@ namespace DynamicPanelController
             InitializeComponent();
             Loaded += WindowLoaded;
             Log.LogChanged += ApplicationLogChanged;
-            App.CommunicationsStarted += SwapToggleConnectionButtonText;
-            App.CommunicationsStopped += (Sender, Args) => { EmulatorWindow?.Dispatcher.Invoke(EmulatorWindow.Close); };
-            App.CommunicationsStopped += SwapToggleConnectionButtonText;
+            App.CommunicationsStarted += ApplicationStartedCommunicating;
+            App.CommunicationsStopped += ApplicationStoppedCommunicating;
+            App.SelectedProfileChanged += ProfileSelectionChanged;
         }
 
         private void WindowLoaded(object Sender, EventArgs Args)
@@ -46,18 +45,10 @@ namespace DynamicPanelController
         {
             if (App.Communicating)
             {
-                PortSelection.IsEnabled = true;
-                if (EmulatorWindow is not null)
-                {
-                    DontCallToggle = true;
-                    EmulatorWindow.Close();
-                }
                 App.StopPortCommunication();
-                SwapToggleConnectionButtonText();
             }
             else
             {
-                PortSelection.IsEnabled = false;
                 bool Emulate = PortSelection.Text == "Emulator";
                 App.StartPortCommunication(Emulate);
                 if (Emulate)
@@ -66,18 +57,30 @@ namespace DynamicPanelController
                     EmulatorWindow.Closed += EmulatorClosed;
                     EmulatorWindow.Show();
                 }
-                SwapToggleConnectionButtonText();
             }
+        }
+
+        private void ApplicationStartedCommunicating(object? Sender, EventArgs Args)
+        {
+            PortSelection.IsEnabled = false;
+            PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = "Disconnect"; });
+        }
+
+        private void ApplicationStoppedCommunicating(object? Sender, EventArgs Args)
+        {
+            PortSelection.IsEnabled = true;
+            PortConnectionToggle.Dispatcher.Invoke(() => { PortConnectionToggle.Content = "Connect"; });
+            if (EmulatorWindow is not null)
+                EmulatorWindow.Close();
         }
 
         private void EmulatorClosed(object? Sender, EventArgs Args)
         {
-            if (DontCallToggle)
+            if (App.Communicating)
             {
-                DontCallToggle = false;
+                ToggleConnection(Sender, Args);
                 return;
             }
-            ToggleConnection(Sender, Args);
         }
 
         private void LogBoxTextChanged(object Sender, EventArgs E)
@@ -113,6 +116,7 @@ namespace DynamicPanelController
 
         private void UpdateProfileSelectionItems()
         {
+            IgnoreNextSelectionChange = true;
             App.RefreshProfiles();
             ProfileSelection.Items.Clear();
             foreach (var Profile in App.Profiles)
@@ -120,32 +124,43 @@ namespace DynamicPanelController
             ProfileSelection.SelectedIndex = App.SelectedProfileIndex;
         }
 
-        private void ProfileSelectionOpened(object? Sender, EventArgs Args)
+        private void ProfileSelectorOpened(object? Sender, EventArgs Args)
         {
             UpdateProfileSelectionItems();
         }
 
-        private void ProfileSelectionChanged(object? Sender, EventArgs Args)
+        private void ProfileSelectorSelectionChanged(object? Sender, EventArgs Args)
         {
             DeleteProfile.IsEnabled = false;
             EditProfile.IsEnabled = false;
             if (ProfileSelection.SelectedIndex == -1)
                 return;
-            App.SelectedProfileIndex = ProfileSelection.SelectedIndex;
+            IgnoreNextSelectionChange = true;
+            App.SelectIndex(ProfileSelection.SelectedIndex);
             EditProfile.IsEnabled = true;
             DeleteProfile.IsEnabled = true;
         }
 
-        private void ProfileSelectionClosed(object? Sender, EventArgs Args)
+        private void ProfileSelectorClosed(object? Sender, EventArgs Args)
         {
             if (ProfileSelection.SelectedIndex == -1)
                 ProfileSelection.SelectedIndex = 0;
         }
 
+        private void ProfileSelectionChanged(object? Sender, EventArgs Args)
+        {
+            if (IgnoreNextSelectionChange)
+            {
+                IgnoreNextSelectionChange = false;
+                return;
+            }
+            UpdateProfileSelectionItems();
+        }
+
         private void NewProfileButtonClicked(object? Sender, EventArgs Args)
         {
             App.Profiles.Add(new PanelProfile() { Name = "New Profile"});
-            App.SelectedProfileIndex = App.Profiles.Count - 1;
+            App.SelectIndex(App.Profiles.Count - 1);
             UpdateProfileSelectionItems();
         }
 

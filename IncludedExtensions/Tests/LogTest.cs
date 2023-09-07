@@ -1,5 +1,5 @@
 ﻿using PanelExtension;
-using Profiling.ProfilingTypes;
+using Profiling.ProfilingTypes.PanelItems;
 
 namespace IncludedExtensions.Tests
 {
@@ -8,7 +8,7 @@ namespace IncludedExtensions.Tests
     {
         public object? Do()
         {
-            Application?.Logger.Info("Test action ran.");
+            Application?.Logger.Info("Test action ran.", "Log Test Action");
             return null;
         }
     }
