@@ -59,7 +59,7 @@ namespace DynamicPanelController
         public static readonly int ButtonStateIndex = 1;
         public bool Communicating { get; private set; } = false;
         public bool AllowEmulator
-        { 
+        {
             get
             {
                 if (Settings.GlobalSettings.ContainsKey("EmulatorEnabled"))

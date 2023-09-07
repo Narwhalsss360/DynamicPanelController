@@ -123,6 +123,11 @@ namespace Profiling
             Result = true;
         }
 
+        public override string ToString()
+        {
+            return $"{Name}";
+        }
+
         public string Serialize()
         {
             return JsonSerializer.Serialize(new Serializable(this), options: new JsonSerializerOptions() { WriteIndented = true });
