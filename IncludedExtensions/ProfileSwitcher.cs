@@ -42,7 +42,7 @@ namespace IncludedExtensions
                 return "Must specify a profile name.";
             if (Application is null)
                 return "Application is null";
-            if (!(Options[ProfileNameKey] is CycleNextValue or CyclePreviousValue))
+            if (Options[ProfileNameKey] is not (CycleNextValue or CyclePreviousValue))
                 if (!Application.Profiles.Any(Profile => Profile.Name == Options[ProfileNameKey]))
                     return $"Profile {Options[ProfileNameKey]} not found.";
             this.Options = Options;

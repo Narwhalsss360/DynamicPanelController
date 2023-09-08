@@ -3,7 +3,6 @@ using PanelExtension;
 using Profiling;
 using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
-using System.ComponentModel.Design.Serialization;
 
 namespace IncludedExtensions
 {
@@ -22,8 +21,7 @@ namespace IncludedExtensions
         public const string IOTypeButton = "Button";
         public const string IOTypeAbsolute = "Absolute";
         public const string IOTypeSource = "Source";
-
-        Dictionary<string, string?> Options = new();
+        private Dictionary<string, string?> Options = new();
 
         public string?[]?[]? ValidOptions()
         {
@@ -89,7 +87,7 @@ namespace IncludedExtensions
             return Options;
         }
 
-        IPanelItem? GetPanelItemOfMapping(Mapping Mapping)
+        private IPanelItem? GetPanelItemOfMapping(Mapping Mapping)
         {
             if (Mapping is ActionMapping ActionMapping)
                 return ActionMapping.Action;
@@ -140,13 +138,13 @@ namespace IncludedExtensions
             Dictionary<string, string?> SettingsToSet = new(Options);
 
             if (SettingsToSet.ContainsKey(ProfileNameKey))
-                SettingsToSet.Remove(ProfileNameKey);
+                _ = SettingsToSet.Remove(ProfileNameKey);
             if (SettingsToSet.ContainsKey(IOTypeKey))
-                SettingsToSet.Remove(IOTypeKey);
+                _ = SettingsToSet.Remove(IOTypeKey);
             if (SettingsToSet.ContainsKey(IDKey))
-                SettingsToSet.Remove(IDKey);
+                _ = SettingsToSet.Remove(IDKey);
             if (SettingsToSet.ContainsKey(ButtonUpdateStateKey))
-                SettingsToSet.Remove(ButtonUpdateStateKey);
+                _ = SettingsToSet.Remove(ButtonUpdateStateKey);
 
             string? Message = PanelItemToSet.SetOptions(SettingsToSet);
 

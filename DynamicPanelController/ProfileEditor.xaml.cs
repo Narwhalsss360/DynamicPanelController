@@ -427,7 +427,7 @@ namespace DynamicPanelController
                 {
                     if (OptionsKeyValuePairs.ContainsKey(KeyValuePair.Key))
                         continue;
-                    OptionsKeyValuePairs.Add(KeyValuePair.Key, new string[] {  });
+                    OptionsKeyValuePairs.Add(KeyValuePair.Key, new string[] { });
                 }
             }
 

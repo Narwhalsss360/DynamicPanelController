@@ -1,6 +1,5 @@
 ﻿using PanelExtension;
 using Profiling.ProfilingTypes.PanelItems;
-using System.Diagnostics;
 using WindowsInput;
 using WindowsInput.Native;
 
@@ -13,11 +12,8 @@ namespace IncludedExtensions
         private const string TextInputTypeKey = "Text";
         private const string StrokeInputTypeKey = "Key";
         private const string EntryKey = "Entry";
-
-
-        Dictionary<string, string?> Options = new();
-
-        InputSimulator Input = new();
+        private Dictionary<string, string?> Options = new();
+        private readonly InputSimulator Input = new();
 
         public string?[]?[]? ValidOptions()
         {
@@ -29,7 +25,7 @@ namespace IncludedExtensions
                 }
                 else
                 {
-                    List<string> EntryKeysArray = new List<string>() { EntryKey };
+                    List<string> EntryKeysArray = new() { EntryKey };
                     EntryKeysArray.AddRange(Enum.GetNames(typeof(VirtualKeyCode)));
                     return new string?[]?[]
                     {
@@ -82,14 +78,14 @@ namespace IncludedExtensions
 
             if (Options[InputTypeKey] == TextInputTypeKey)
             {
-                Input.Keyboard.TextEntry(Options[EntryKey]);
+                _ = Input.Keyboard.TextEntry(Options[EntryKey]);
             }
             else
             {
                 bool Success = Enum.TryParse(Options[EntryKey], out VirtualKeyCode KeyCode);
                 if (!Success)
                     return $"Couldn't parse keycode-string {Options[EntryKey]} to VirtualKeyCode.";
-                Input.Keyboard.KeyPress(KeyCode);
+                _ = Input.Keyboard.KeyPress(KeyCode);
             }
 
             return null;

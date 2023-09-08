@@ -6,7 +6,7 @@ namespace IncludedExtensions
     internal class StaticSource : IPanelSource
     {
         private const string SourceValueKey = "SourceValue";
-        Dictionary<string, string?> ExtensionOptions = new();
+        private Dictionary<string, string?> ExtensionOptions = new();
 
         public string?[]?[]? ValidOptions() => new string?[]?[] { new string?[] { SourceValueKey, null } };
 

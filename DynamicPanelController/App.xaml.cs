@@ -31,9 +31,6 @@ namespace DynamicPanelController
         public int SelectedProfileIndex
         {
             get
-            {
-                return SelectedProfileIndexContainer;
-            }
             set
             {
                 if (value >= Profiles.Count)
@@ -330,7 +327,7 @@ namespace DynamicPanelController
         {
             try
             {
-                Activator.CreateInstance(Type);
+                _ = Activator.CreateInstance(Type);
             }
             catch (Exception E)
             {

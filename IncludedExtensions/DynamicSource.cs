@@ -8,7 +8,7 @@ namespace IncludedExtensions
     internal class DynamicSource : Extension, IPanelSource
     {
         private const string SourceValueKey = "SourceValue";
-        Dictionary<string, string?> Options = new();
+        private Dictionary<string, string?> Options = new();
 
         public DynamicSource()
             : base()
