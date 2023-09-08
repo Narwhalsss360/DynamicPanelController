@@ -12,7 +12,7 @@ namespace Profiling.ProfilingTypes.PanelItems
 
     public interface IAbsolutePanelAction : IPanelItem
     {
-        object? Set(object? Value);
+        public object? Set(object? Value);
     }
 
     public static class AbsolutePanelActionExtensions

@@ -12,7 +12,7 @@ namespace Profiling.ProfilingTypes.PanelItems
 
     public interface IPanelAction : IPanelItem
     {
-        object? Do(object? Arguments = null)
+        public object? Do(object? Arguments = null)
         {
             return null;
         }
