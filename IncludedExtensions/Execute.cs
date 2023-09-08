@@ -8,41 +8,59 @@ namespace IncludedExtensions
     [PanelActionDescriptor("Execute")]
     public class Execute : Extension, IPanelAction
     {
-        private string? ProgramPath = null;
-        private Dictionary<string, string?> CurrentOptions = new();
+        private const string PathKey = "Path";
+        private const string ArgumentsKey = "Arguments";
+        private Dictionary<string, string?> Options = new();
 
         public string?[]?[]? ValidOptions()
         {
-            return new string?[]?[] { new string?[] { "Path", null } };
+            return new string?[]?[] { new string?[] { PathKey, null }, new string?[] { ArgumentsKey, null } };
         }
 
         public Dictionary<string, string?>? GetOptions()
         {
-            return CurrentOptions;
+            return Options;
         }
 
         public string? SetOptions(Dictionary<string, string?> Options)
         {
-            if (!Options.ContainsKey("Path"))
+            this.Options = Options;
+            if (!Options.ContainsKey(PathKey))
                 return "Must specify a program path.";
-            if (!File.Exists(Options["Path"]))
+            if (!File.Exists(Options[PathKey]))
                 return "File does not exist.";
-            ProgramPath = Options["Path"];
-            CurrentOptions = Options;
+            if (Options.ContainsKey(ArgumentsKey))
+            {
+                if (Options[ArgumentsKey] is null)
+                {
+                    Options[ArgumentsKey] = "";
+                }
+            }
+            else
+            {
+                Options.Add(PathKey, "");
+            }
             return null;
         }
 
         public object? Do(object? Arguments = null)
         {
-            if (ProgramPath is null)
+            if (Options[PathKey] is not string ProgramPath)
             {
                 Application?.Logger.Log(ILogger.Levels.Error, "No program path specified.", "Execute");
                 return null;
             }
 
-            if (!File.Exists(ProgramPath))
+            string ProgramArguments = "";
+
+            if (Options[ArgumentsKey] is string ProgramArgs)
             {
-                Application?.Logger.Log(ILogger.Levels.Error, $"\"{ProgramPath}\" Doesn't exist.", "Execute");
+                ProgramArguments = ProgramArgs;
+            }
+
+            if (!File.Exists(Options[PathKey]))
+            {
+                Application?.Logger.Log(ILogger.Levels.Error, $"\"{Options[PathKey]}\" Doesn't exist.", "Execute");
                 return null;
             }
 
@@ -50,7 +68,7 @@ namespace IncludedExtensions
 
             try
             {
-                _ = Process.Start(ProgramPath);
+                _ = Process.Start(ProgramPath, ProgramArguments);
             }
             catch (Win32Exception E)
             {
@@ -66,7 +84,7 @@ namespace IncludedExtensions
             }
 
             if (Caught is not null)
-                Application?.Logger.Log(ILogger.Levels.Error, $"An error occured trying to execute {ProgramPath}. {Caught}", "Execute");
+                Application?.Logger.Log(ILogger.Levels.Error, $"An error occured trying to execute {Options[PathKey]}. {Caught}", "Execute");
             return Caught;
         }
     }
