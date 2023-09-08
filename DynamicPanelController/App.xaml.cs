@@ -30,7 +30,7 @@ namespace DynamicPanelController
 
         public int SelectedProfileIndex
         {
-            get
+            get => SelectedProfileIndexContainer;
             set
             {
                 if (value >= Profiles.Count)
