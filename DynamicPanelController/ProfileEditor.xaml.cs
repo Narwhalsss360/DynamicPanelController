@@ -444,6 +444,10 @@ namespace DynamicPanelController
                 if (KeyValuePair.Value is not null && KeyValuePair.Value.Length > 0)
                 {
                     int IndexOfSelected = Array.IndexOf(KeyValuePair.Value, RightValue);
+                    if (IndexOfSelected == -1)
+                        if (KeyValuePair.Value.Length > 0)
+                            IndexOfSelected = 0;
+
                     ComboBox RightComboBox = new()
                     {
                         ItemsSource = KeyValuePair.Value,
