@@ -16,19 +16,22 @@ namespace DynamicPanelController
         public PanelProfile EditiedVersion;
         private PanelDescriptorEditor? CustomDescriptorEditor = null;
         private bool PushedButtonSet = true;
+
         private bool DontInstantiate = false;
         private List<OptionsListBoxItem> OptionsListBoxItems { get; } = new();
+        private int CountOfValidOptions;
 
-        private readonly int SelectedIndex = -1;
+
+        private readonly int SelectedProfileIndex = -1;
 
         private readonly Dictionary<string, string?> EnteredOptions = new();
 
-        public ProfileEditor(int SelectedIndex)
+        public ProfileEditor(int SelectedProfileIndex)
         {
             if (App is null)
                 throw new Exception("Couldn't get current app.");
             InitializeComponent();
-            if (SelectedIndex < 0)
+            if (SelectedProfileIndex < 0)
             {
                 _ = MessageBox.Show($"The editor window was opened without a selected profile. Stack trace:\n{Environment.StackTrace}", "Opened incorrecty", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
@@ -36,8 +39,8 @@ namespace DynamicPanelController
 
             Loaded += WindowLoaded;
             Closed += WindowClosed;
-            this.SelectedIndex = SelectedIndex;
-            EditiedVersion = App.Profiles[SelectedIndex];
+            this.SelectedProfileIndex = SelectedProfileIndex;
+            EditiedVersion = App.Profiles[SelectedProfileIndex];
             PanelProfileNameTextBlock.Text = EditiedVersion.Name;
         }
 
@@ -249,6 +252,7 @@ namespace DynamicPanelController
 
         private void PanelItemOptionSelected(object? Sender, EventArgs Args)
         {
+            RemoveOptionButton.IsEnabled = false;
             if (OptionsSelectorList.SelectedIndex == -1)
             {
                 RemoveOptionButton.IsEnabled = false;
@@ -259,6 +263,10 @@ namespace DynamicPanelController
 
             if (!AllowsAnyKey)
                 return;
+            if (OptionsSelectorList.SelectedIndex < CountOfValidOptions)
+                return;
+
+            RemoveOptionButton.IsEnabled = AllowsAnyKey;
         }
 
         private void RemoveMappingClicked(object? Sender, EventArgs Args)
@@ -383,6 +391,7 @@ namespace DynamicPanelController
             bool AllowsAnyKey = ValidOptions is null;
             Dictionary<string, string[]?> OptionsKeyValuePairs = new();
 
+            CountOfValidOptions = 0;
             if (ValidOptions is not null)
                 foreach (var OptionKeyValuePairs in ValidOptions)
                 {
@@ -410,6 +419,7 @@ namespace DynamicPanelController
                         ValidValues.Add(ValidOption);
                     }
                     OptionsKeyValuePairs.Add(Key, AllowsAnyValue ? null : ValidValues.ToArray());
+                    CountOfValidOptions++;
                 }
             if (Options is not null)
             {
@@ -584,8 +594,8 @@ namespace DynamicPanelController
         private void ApplyClicked(object? Sender, EventArgs Args)
         {
             EditiedVersion.Name = PanelProfileNameTextBlock.Text;
-            if (SelectedIndex == -1)
-                App.Profiles[SelectedIndex] = EditiedVersion;
+            if (SelectedProfileIndex == -1)
+                App.Profiles[SelectedProfileIndex] = EditiedVersion;
         }
     }
 }
