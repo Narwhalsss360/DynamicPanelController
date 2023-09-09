@@ -1,7 +1,7 @@
 ﻿using PanelExtension;
 using Profiling.ProfilingTypes.PanelItems;
 
-namespace IncludedExtensions
+namespace IncludedExtensions.Internals
 {
     [PanelActionDescriptor("Profile Switcher")]
     public class ProfileSwitcher : Extension, IPanelAction

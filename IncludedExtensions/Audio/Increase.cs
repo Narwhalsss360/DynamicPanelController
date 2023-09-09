@@ -7,7 +7,7 @@ namespace IncludedExtensions.Volume
     {
         public object? Do(object? Arguments = null)
         {
-            Volume.Controller.DefaultPlaybackDevice.Volume++;
+            Audio.Controller.DefaultPlaybackDevice.Volume++;
             return null;
         }
     }

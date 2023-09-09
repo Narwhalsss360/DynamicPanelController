@@ -7,7 +7,7 @@ namespace IncludedExtensions.Volume
     {
         public object? GetSourceValue(object? Arguments = null)
         {
-            return $"{Volume.Controller.DefaultPlaybackDevice.Volume}";
+            return $"{Audio.Controller.DefaultPlaybackDevice.Volume}";
         }
     }
 }

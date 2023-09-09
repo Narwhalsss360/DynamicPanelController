@@ -2,12 +2,12 @@
 
 namespace IncludedExtensions.Volume
 {
-    [PanelActionDescriptor("Decrease Volume")]
-    public class Decrease : IPanelAction
+    [PanelActionDescriptor("Toggle Mute")]
+    internal class ToggleMute : IPanelAction
     {
         public object? Do(object? Arguments = null)
         {
-            Volume.Controller.DefaultPlaybackDevice.Volume--;
+            _ = Audio.Controller.DefaultPlaybackDevice.ToggleMute();
             return null;
         }
     }

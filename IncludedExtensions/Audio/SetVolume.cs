@@ -15,7 +15,7 @@ namespace IncludedExtensions.Volume
                 return null;
 
             if (CastedValue is >= 0 and <= 100)
-                Volume.Controller.DefaultPlaybackDevice.Volume = (double)CastedValue;
+                Audio.Controller.DefaultPlaybackDevice.Volume = (double)CastedValue;
             return null;
         }
     }

@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="AudioSwitcher.AudioApi.CoreAudio" Version="3.0.3" />
     <PackageReference Include="InputSimulator" Version="1.0.4" />
+    <PackageReference Include="Nefarius.ViGEm.Client" Version="1.21.256" />
   </ItemGroup>
 
   <ItemGroup>

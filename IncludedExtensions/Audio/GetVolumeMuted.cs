@@ -7,7 +7,7 @@ namespace IncludedExtensions.Volume
     {
         public object? GetSourceValue(object? Arguments = null)
         {
-            return $"{(Volume.Controller.DefaultPlaybackDevice.IsMuted ? "0" : Volume.Controller.DefaultPlaybackDevice.Volume)}";
+            return $"{(Audio.Controller.DefaultPlaybackDevice.IsMuted ? "0" : Audio.Controller.DefaultPlaybackDevice.Volume)}";
         }
     }
 }

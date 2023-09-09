@@ -4,7 +4,7 @@ using Profiling;
 using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
 
-namespace IncludedExtensions
+namespace IncludedExtensions.Internals
 {
     [PanelActionDescriptor("Options Setter")]
     internal class OptionsSetter : Extension, IPanelAction
@@ -116,17 +116,17 @@ namespace IncludedExtensions
             if (Options[IOTypeKey] == IOTypeButton)
             {
                 MappingSource = Profile.ActionMappings.ToArray();
-                FindingPredicate = (Mapping Action) => $"{Action.ID}" == Options[IDKey] && (Action as ActionMapping)?.UpdateState == Options[ButtonUpdateStateKey]?.ToButtonUpdateState();
+                FindingPredicate = (Action) => $"{Action.ID}" == Options[IDKey] && (Action as ActionMapping)?.UpdateState == Options[ButtonUpdateStateKey]?.ToButtonUpdateState();
             }
             else if (Options[IOTypeKey] == IOTypeAbsolute)
             {
                 MappingSource = Profile.AbsoluteActionMappings.ToArray();
-                FindingPredicate = (Mapping AbsoluteAction) => $"{AbsoluteAction.ID}" == Options[IDKey];
+                FindingPredicate = (AbsoluteAction) => $"{AbsoluteAction.ID}" == Options[IDKey];
             }
             else
             {
                 MappingSource = Profile.SourceMappings.ToArray();
-                FindingPredicate = (Mapping Source) => $"{Source.ID}" == Options[IDKey];
+                FindingPredicate = (Source) => $"{Source.ID}" == Options[IDKey];
             }
 
             if (Array.Find(MappingSource, FindingPredicate) is not Mapping Mapping)

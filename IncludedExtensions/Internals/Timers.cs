@@ -4,7 +4,7 @@ using Profiling;
 using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
 
-namespace IncludedExtensions
+namespace IncludedExtensions.Internals
 {
     [PanelActionDescriptor("Timers")]
     public class Timers : Extension, IPanelAction
@@ -299,12 +299,12 @@ namespace IncludedExtensions
                         return "ButtonUpdateStateKey was not specified.";
 
                     MappingSource = CurrentProfile.ActionMappings.ToArray();
-                    FindingPredicate = (Mapping Action) => $"{Action.ID}" == Options[IDKey] && (Action as ActionMapping)?.UpdateState == Options[ButtonUpdateStateKey]?.ToButtonUpdateState();
+                    FindingPredicate = (Action) => $"{Action.ID}" == Options[IDKey] && (Action as ActionMapping)?.UpdateState == Options[ButtonUpdateStateKey]?.ToButtonUpdateState();
                 }
                 else if (Options[IOTypeKey] == IOAbsolute)
                 {
                     MappingSource = CurrentProfile.AbsoluteActionMappings.ToArray();
-                    FindingPredicate = (Mapping AbsoluteAction) => $"{AbsoluteAction.ID}" == Options[IDKey];
+                    FindingPredicate = (AbsoluteAction) => $"{AbsoluteAction.ID}" == Options[IDKey];
                 }
                 else
                 {

@@ -2,7 +2,7 @@
 using Profiling.ProfilingTypes.PanelItems;
 using System.Reflection;
 
-namespace IncludedExtensions
+namespace IncludedExtensions.Internals
 {
     [PanelSourceDescriptor("Dynamic Source")]
     internal class DynamicSource : Extension, IPanelSource

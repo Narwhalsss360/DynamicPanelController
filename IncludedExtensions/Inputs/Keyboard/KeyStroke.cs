@@ -1,9 +1,8 @@
 ﻿using PanelExtension;
 using Profiling.ProfilingTypes.PanelItems;
-using WindowsInput;
 using WindowsInput.Native;
 
-namespace IncludedExtensions
+namespace IncludedExtensions.Inputs.Keyboard
 {
     [PanelActionDescriptor("Key Stroke")]
     public class KeyStroke : Extension, IPanelAction
@@ -13,7 +12,6 @@ namespace IncludedExtensions
         private const string StrokeInputTypeKey = "Key";
         private const string EntryKey = "Entry";
         private Dictionary<string, string?> Options = new();
-        private readonly InputSimulator Input = new();
 
         public string?[]?[]? ValidOptions()
         {
@@ -78,14 +76,14 @@ namespace IncludedExtensions
 
             if (Options[InputTypeKey] == TextInputTypeKey)
             {
-                _ = Input.Keyboard.TextEntry(Options[EntryKey]);
+                _ = Keyboard.Input.Keyboard.TextEntry(Options[EntryKey]);
             }
             else
             {
                 bool Success = Enum.TryParse(Options[EntryKey], out VirtualKeyCode KeyCode);
                 if (!Success)
                     return $"Couldn't parse keycode-string {Options[EntryKey]} to VirtualKeyCode.";
-                _ = Input.Keyboard.KeyPress(KeyCode);
+                _ = Keyboard.Input.Keyboard.KeyPress(KeyCode);
             }
 
             return null;
