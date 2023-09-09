@@ -400,7 +400,8 @@ namespace DynamicPanelController
                         AllowsAnyKey = true;
                         continue;
                     }
-                    if (OptionKeyValuePairs[0] is not string Key)
+
+                    if (OptionKeyValuePairs.Length == 0 || OptionKeyValuePairs[0] is not string Key)
                     {
                         AllowsAnyKey = true;
                         continue;
@@ -427,6 +428,8 @@ namespace DynamicPanelController
                 {
                     if (OptionsKeyValuePairs.ContainsKey(KeyValuePair.Key))
                         continue;
+                    if (!AllowsAnyKey)
+                        break;
                     OptionsKeyValuePairs.Add(KeyValuePair.Key, new string[] { });
                 }
             }
