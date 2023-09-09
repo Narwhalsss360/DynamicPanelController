@@ -466,7 +466,7 @@ namespace DynamicPanelController
         public void LoadProfiles()
         {
             if (!Directory.Exists(Settings.ProfilesDirectory))
-                return;
+                goto SkipLoad;
             foreach (var Profile in new DirectoryInfo(Settings.ProfilesDirectory).GetFiles())
             {
                 if (Profile.Extension != ".json")
@@ -476,6 +476,7 @@ namespace DynamicPanelController
                 _ = ProfileStream.Read(FileBytes, 0, FileBytes.Length);
                 LoadProfile(FileBytes);
             }
+        SkipLoad:
             if (Profiles.Count == 0)
                 Profiles.Add(new PanelProfile() { Name = "New Profile" });
         }
@@ -765,6 +766,14 @@ namespace DynamicPanelController
         public void RefreshProfiles()
         {
             DirectoryInfo DirectoryInfo = new(Settings.ProfilesDirectory);
+            if (!DirectoryInfo.Exists)
+            {
+                Settings.ProfilesDirectory = new AppSettings().ProfilesDirectory;
+                DirectoryInfo = new(Settings.ProfilesDirectory);
+                if (!DirectoryInfo.Exists)
+                    Directory.CreateDirectory(Settings.ProfilesDirectory);
+            }
+
             foreach (var FileInfo in DirectoryInfo.GetFiles())
             {
                 if (FileInfo.Extension != ".json")
