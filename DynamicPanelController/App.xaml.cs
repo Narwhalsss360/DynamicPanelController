@@ -51,10 +51,10 @@ namespace DynamicPanelController
 
         private Thread SendSourceMappingsThread;
         private bool SuspendSendThread = false;
-        private bool StopSending = false;
         private readonly PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
+        private static readonly int SendSourceThreadMessageInterval = 1000 / 25;
         public bool Communicating { get; private set; } = false;
         public bool AllowEmulator
         {
@@ -566,8 +566,6 @@ namespace DynamicPanelController
 
         private void SendSourceMappings()
         {
-            if (StopSending)
-                return;
             while (!SuspendSendThread)
             {
                 if (Emulating)
@@ -596,30 +594,36 @@ namespace DynamicPanelController
                         continue;
                     if (SelectedProfileIndex == -1 || Profiles.Count == 0)
                         continue;
-
-                    foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
+                    try
                     {
-                        List<byte> Bytes = new() { SourceMapping.ID };
-                        if (SourceMapping.Source.GetSourceValue() is not string OutString)
-                            continue;
-                        Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
-                        Bytes.Add(0);
-
-                        try
+                        foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                         {
-                            if (SuspendSendThread)
+                            Thread.Sleep(SendSourceThreadMessageInterval);
+                            List<byte> Bytes = new() { SourceMapping.ID };
+                            if (SourceMapping.Source.GetSourceValue() is not string OutString)
                                 continue;
-                            Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
-                        }
-                        catch (Exception)
-                        {
-                            Logger.Log(ILogger.Levels.Error, $"Device on port {Port.PortName} disconnected.", "Program");
-                            StopPortCommunication();
-                            break;
+                            Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
+                            Bytes.Add(0);
+
+                            try
+                            {
+                                if (SuspendSendThread)
+                                    continue;
+                                Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
+                            }
+                            catch (Exception)
+                            {
+                                Logger.Log(ILogger.Levels.Error, $"Device on port {Port.PortName} disconnected.", "Program");
+                                StopPortCommunication();
+                                break;
+                            }
                         }
                     }
+                    catch (InvalidOperationException)
+                    {
+                        continue;
+                    }
                 }
-                Thread.Sleep(15);
             }
             SendSourceMappingsThread = new Thread(SendSourceMappings);
         }
@@ -638,7 +642,8 @@ namespace DynamicPanelController
             else
             {
                 Logger.Log(ILogger.Levels.Info, $"Stopping communications on port {Port.PortName}", "Program");
-                Port.Close();
+                if (!Port.IsOpen)
+                    Port.Close();
             }
             CommunicationsStopped?.Invoke(this, new EventArgs());
             PanelExtensions.ForEach(E => InvokeMethod<Extension>("CommunicationsStoppedWrapper", new object?[] { null, new EventArgs() }, E));
@@ -807,7 +812,7 @@ namespace DynamicPanelController
 
         private void Exiting(object Sender, EventArgs Args)
         {
-            StopSending = true;
+            SuspendSendThread = true;
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
             PanelExtensions.ForEach(E => InvokeMethod<Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
