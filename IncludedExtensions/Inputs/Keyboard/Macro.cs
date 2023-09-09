@@ -36,11 +36,11 @@ namespace IncludedExtensions.Inputs.Keyboard
                     Application?.Logger.Log(ILogger.Levels.Error, $"{MacroPair.Value} is not a valid key code.", "Macro");
                     continue;
                 }
-                _ = Keyboard.Input.Keyboard.KeyDown(KeyCode);
+                _ = Inputs.Input.Keyboard.KeyDown(KeyCode);
                 UpQueue.Enqueue(KeyCode);
             }
             while (UpQueue.Count != 0)
-                Keyboard.Input.Keyboard.KeyUp(UpQueue.Dequeue());
+                Inputs.Input.Keyboard.KeyUp(UpQueue.Dequeue());
 
             return null;
         }

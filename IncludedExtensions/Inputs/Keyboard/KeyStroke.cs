@@ -76,14 +76,14 @@ namespace IncludedExtensions.Inputs.Keyboard
 
             if (Options[InputTypeKey] == TextInputTypeKey)
             {
-                _ = Keyboard.Input.Keyboard.TextEntry(Options[EntryKey]);
+                _ = Inputs.Input.Keyboard.TextEntry(Options[EntryKey]);
             }
             else
             {
                 bool Success = Enum.TryParse(Options[EntryKey], out VirtualKeyCode KeyCode);
                 if (!Success)
                     return $"Couldn't parse keycode-string {Options[EntryKey]} to VirtualKeyCode.";
-                _ = Keyboard.Input.Keyboard.KeyPress(KeyCode);
+                _ = Inputs.Input.Keyboard.KeyPress(KeyCode);
             }
 
             return null;
