@@ -23,6 +23,12 @@
 	<PackageReference Include="AudioSwitcher.AudioApi.CoreAudio" Version="3.0.3"></PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="vJoyInterfaceWrap">
+      <HintPath>vJoyInterfaceWrap.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="call $(ProjectDir)CopyToBin.bat" />
   </Target>

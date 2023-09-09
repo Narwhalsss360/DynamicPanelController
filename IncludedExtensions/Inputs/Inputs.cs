@@ -1,4 +1,5 @@
-﻿using WindowsInput;
+﻿using vJoyInterfaceWrap;
+using WindowsInput;
 
 namespace IncludedExtensions.Inputs
 {
@@ -13,6 +14,8 @@ namespace IncludedExtensions.Inputs
             ScrollUp,
             ScrollDown
         }
+
+        public static Dictionary<uint, vJoy> AcquiredFeeders = new();
 
         public static readonly InputSimulator Input = new();
         public static int ScrollClicks = 1;
