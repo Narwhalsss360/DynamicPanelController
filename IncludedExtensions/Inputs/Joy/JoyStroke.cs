@@ -12,7 +12,7 @@ namespace IncludedExtensions.Inputs.Joy
 
         Dictionary<string, string?> Options = new();
 
-        JoyStroke()
+        public JoyStroke()
         : base()
         {
             if (!new vJoy().vJoyEnabled())
