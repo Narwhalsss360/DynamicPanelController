@@ -51,6 +51,7 @@ namespace DynamicPanelController
 
         private Thread SendSourceMappingsThread;
         private bool SuspendSendThread = false;
+        private bool StopSending = false;
         private readonly PacketCollector Collector = new();
         public static readonly int InputIDIndex = 0;
         public static readonly int ButtonStateIndex = 1;
@@ -565,6 +566,8 @@ namespace DynamicPanelController
 
         private void SendSourceMappings()
         {
+            if (StopSending)
+                return;
             while (!SuspendSendThread)
             {
                 if (Emulating)
@@ -804,6 +807,7 @@ namespace DynamicPanelController
 
         private void Exiting(object Sender, EventArgs Args)
         {
+            StopSending = true;
             if (SendSourceMappingsThread.ThreadState != ThreadState.Unstarted)
                 SendSourceMappingsThread.Join();
             PanelExtensions.ForEach(E => InvokeMethod<Extension>("ApplicationExiting", new object[] { Sender, Args }, E));
