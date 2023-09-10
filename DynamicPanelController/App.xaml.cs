@@ -576,7 +576,8 @@ namespace DynamicPanelController
 
                     foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                     {
-                        if (SourceMapping.Source.GetSourceValue() is string OutString)
+                        object? Value = SourceMapping.Source.GetSourceValue();
+                        if (Value is string OutString)
                         {
                             if (EmulatorDisplay is null)
                             {
@@ -587,6 +588,10 @@ namespace DynamicPanelController
 
                             continue;
                         }
+                        else if (Value is Exception Error)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"{Error.Message}", $"Program | {SourceMapping.Source.GetPanelItemDescriptor()?.Name}");
+                        }
                     }
                 }
                 else
@@ -595,28 +600,36 @@ namespace DynamicPanelController
                         continue;
                     if (SelectedProfileIndex == -1 || Profiles.Count == 0)
                         continue;
+
                     try
                     {
                         foreach (var SourceMapping in Profiles[SelectedProfileIndex].SourceMappings)
                         {
-                            Thread.Sleep(SendSourceThreadMessageInterval);
-                            List<byte> Bytes = new() { SourceMapping.ID };
-                            if (SourceMapping.Source.GetSourceValue() is not string OutString)
-                                continue;
-                            Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
-                            Bytes.Add(0);
+                            object? Value = SourceMapping.Source.GetSourceValue();
 
-                            try
+                            if (Value is string OutString)
                             {
-                                if (SuspendSendThread)
-                                    continue;
-                                Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
+                                Thread.Sleep(SendSourceThreadMessageInterval);
+                                List<byte> Bytes = new() { SourceMapping.ID };
+                                Bytes.AddRange(Encoding.UTF8.GetBytes(OutString));
+                                Bytes.Add(0);
+
+                                try
+                                {
+                                    if (SuspendSendThread)
+                                        continue;
+                                    Message.FastWrite(1, Bytes.ToArray(), PacketSize, Port.BaseStream);
+                                }
+                                catch (Exception)
+                                {
+                                    Logger.Log(ILogger.Levels.Error, $"Device on port {Port.PortName} disconnected.", "Program");
+                                    StopPortCommunication();
+                                    break;
+                                }
                             }
-                            catch (Exception)
+                            else if (Value is Exception Error)
                             {
-                                Logger.Log(ILogger.Levels.Error, $"Device on port {Port.PortName} disconnected.", "Program");
-                                StopPortCommunication();
-                                break;
+                                Logger.Log(ILogger.Levels.Error, $"{Error.Message}", $"Program | {SourceMapping.Source.GetPanelItemDescriptor()?.Name}");
                             }
                         }
                     }
