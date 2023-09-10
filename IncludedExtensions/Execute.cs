@@ -38,8 +38,9 @@ namespace IncludedExtensions
             }
             else
             {
-                Options.Add(PathKey, "");
+                Options.Add(ArgumentsKey, "");
             }
+
             return null;
         }
 
