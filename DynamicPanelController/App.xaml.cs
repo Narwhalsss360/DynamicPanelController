@@ -800,7 +800,7 @@ namespace DynamicPanelController
             if (Args.AppendedText is null)
                 return;
             using var LogFile = new StreamWriter(Settings.LogDirectory, true);
-            LogFile.Write(Args.AppendedText);
+            LogFile.Write($"${(Args.AppendedText[0] is '\n' or '\r' ? "" : "\n")}{Args.AppendedText}");
         }
 
         private void SaveSettings()
