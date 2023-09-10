@@ -18,6 +18,6 @@ namespace IncludedExtensions
 
         public Dictionary<string, string?>? GetOptions() => ExtensionOptions;
 
-        public object? GetSourceValue(object? Arguments = null) => ExtensionOptions.ContainsKey(SourceValueKey) ? ExtensionOptions[SourceValueKey] : null;
+        public object? GetSourceValue() => ExtensionOptions.ContainsKey(SourceValueKey) ? ExtensionOptions[SourceValueKey] : null;
     }
 }

@@ -5,7 +5,7 @@ namespace IncludedExtensions.Volume
     [PanelSourceDescriptor("Volume")]
     internal class GetVolume : IPanelSource
     {
-        public object? GetSourceValue(object? Arguments = null)
+        public object? GetSourceValue()
         {
             return $"{Audio.Controller.DefaultPlaybackDevice.Volume}";
         }

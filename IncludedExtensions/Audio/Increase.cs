@@ -5,7 +5,7 @@ namespace IncludedExtensions.Volume
     [PanelActionDescriptor("Increase Volume")]
     public class Increase : IPanelAction
     {
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             Audio.Controller.DefaultPlaybackDevice.Volume++;
             return null;

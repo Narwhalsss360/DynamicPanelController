@@ -44,7 +44,7 @@ namespace IncludedExtensions
             return null;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (Options[PathKey] is not string ProgramPath)
             {

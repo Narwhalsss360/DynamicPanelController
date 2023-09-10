@@ -25,7 +25,7 @@ namespace IncludedExtensions.Inputs.Keyboard
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             Thread.Sleep(2000);
             Queue<VirtualKeyCode> UpQueue = new();

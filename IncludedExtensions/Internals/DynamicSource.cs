@@ -31,7 +31,7 @@ namespace IncludedExtensions.Internals
             return Options;
         }
 
-        public object? GetSourceValue(object? Arguments = null)
+        public object? GetSourceValue()
         {
             if (Application is null)
                 return null;

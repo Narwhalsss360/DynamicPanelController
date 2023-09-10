@@ -42,7 +42,7 @@ namespace IncludedExtensions.Inputs.Joy
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (!Options.ContainsKey(vJoyIDKey))
                 return $"{vJoyIDKey} was not specified.";

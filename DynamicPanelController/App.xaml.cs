@@ -676,18 +676,30 @@ namespace DynamicPanelController
                         Logger.Log(ILogger.Levels.Warning, $"{ActionMapping.Action.GetDescriptorAttribute()?.Name} Do -> {ActionResult}", "Program");
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
-                    if (State is not double)
+                    float Value;
+                    if (State is float or byte or ushort or uint or double)
+                    {
+                        Value = (float)State;
+                    }
+                    else
+                    {
+                        Logger.Log(ILogger.Levels.Error, $"State was not a valid type from ID {ID}.", "Program");
                         return;
+                    }
 
-                    double StateDouble = (double)State;
+                    if (Value is < 0 or > 100)
+                    {
+                        Logger.Log(ILogger.Levels.Error, $"Value {Value} was not in valid range from ID {ID}.", "Program");
+                        return;
+                    }
 
                     if (SelectedProfileIndex == -1)
                         return;
                     if (Profiles[SelectedProfileIndex].AbsoluteActionMappings.Find(Mapping => Mapping.ID == ID) is not AbsoluteActionMapping AbsoluteActionMapping)
                         return;
 
-                    Logger.Log(ILogger.Levels.Verbose, $"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {StateDouble}", "Program");
-                    object? AbsoluteActionResult = AbsoluteActionMapping.AbsoluteAction.Set(StateDouble);
+                    Logger.Log(ILogger.Levels.Verbose, $"Setting {AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} -> {Value}", "Program");
+                    object? AbsoluteActionResult = AbsoluteActionMapping.AbsoluteAction.Set(Value);
                     if (AbsoluteActionResult is string AbsoluteResultString)
                         Logger.Log(ILogger.Levels.Warning, $"{AbsoluteActionMapping.AbsoluteAction.GetDescriptorAttribute()?.Name} Set -> {AbsoluteResultString}", "Program");
                     else if (AbsoluteActionResult is Exception AbsoluteResultException)
@@ -711,15 +723,45 @@ namespace DynamicPanelController
                 case MessageReceiveIDs.ButtonStateUpdate:
                     if (ReceivedMessage.MessageSize < 2)
                     {
-                        Logger.Log(ILogger.Levels.Error, "Did not receive button state, only button ID.", "Program");
+                        Logger.Log(ILogger.Levels.Error, "Did not receive a full message.", "Program");
                         break;
                     }
 
-                    byte InputID = ReceivedMessage.Data[InputIDIndex];
+                    byte ButtonInputID = ReceivedMessage.Data[InputIDIndex];
                     ButtonUpdateStates ButtonState = ReceivedMessage.Data[ButtonStateIndex].ToButtonUpdateState();
-                    RouteUpdate(MessageReceiveIDs.ButtonStateUpdate, InputID, ButtonState);
+                    RouteUpdate(MessageReceiveIDs.ButtonStateUpdate, ButtonInputID, ButtonState);
                     break;
                 case MessageReceiveIDs.AbsolutePosition:
+                    if (ReceivedMessage.MessageSize < 2)
+                    {
+                        Logger.Log(ILogger.Levels.Error, "Did not receive a full message.", "Program");
+                        return;
+                    }
+
+                    byte AbsoluteInputID = ReceivedMessage.Data[InputIDIndex];
+                    int SizeOfData = ReceivedMessage.Data.Length - 1;
+
+                    switch (SizeOfData)
+                    {
+                        case 1:
+                            RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, ReceivedMessage.Data[1]);
+                            break;
+                        case 2:
+                            RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, BitConverter.ToUInt16(ReceivedMessage.Data, 1));
+                            break;
+                        case 4:
+                            if (BitConverter.ToUInt32(ReceivedMessage.Data, 1) <= 100)
+                                RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, BitConverter.ToUInt32(ReceivedMessage.Data, 1));
+                            else
+                                RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, BitConverter.ToSingle(ReceivedMessage.Data, 1));
+                            break;
+                        case 8:
+                            RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, BitConverter.ToDouble(ReceivedMessage.Data, 1));
+                            break;
+                        default:
+                            Logger.Log(ILogger.Levels.Error, $"Received Unkown Data from ID {ReceivedMessage.ID}", "Program");
+                            return;
+                    }
                     break;
                 default:
                     break;

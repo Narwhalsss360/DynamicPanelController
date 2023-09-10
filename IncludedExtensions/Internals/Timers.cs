@@ -239,7 +239,7 @@ namespace IncludedExtensions.Internals
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (Application is null)
                 return "Application is null";

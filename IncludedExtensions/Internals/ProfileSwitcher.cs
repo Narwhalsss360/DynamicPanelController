@@ -54,7 +54,7 @@ namespace IncludedExtensions.Internals
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (!Options.ContainsKey(ProfileNameKey))
                 return "Profile Name not specifed.";

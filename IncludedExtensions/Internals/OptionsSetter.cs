@@ -99,7 +99,7 @@ namespace IncludedExtensions.Internals
                 return null;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (ValidateOptions(Options) is string ErrorMessage)
                 return ErrorMessage;

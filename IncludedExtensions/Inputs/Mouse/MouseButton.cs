@@ -32,7 +32,7 @@ namespace IncludedExtensions.Inputs.Mouse
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (!Options.ContainsKey(ButtonKey))
                 return $"{ButtonKey} not specified.";

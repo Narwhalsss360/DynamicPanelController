@@ -67,7 +67,7 @@ namespace IncludedExtensions.Inputs.Keyboard
             return Options;
         }
 
-        public object? Do(object? Arguments = null)
+        public object? Do()
         {
             if (!Options.ContainsKey(InputTypeKey))
                 return "No specified input type.";
