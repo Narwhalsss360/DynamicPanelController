@@ -1,5 +1,18 @@
 ﻿namespace PanelExtension
 {
+    public class LogChangedEventArgs : EventArgs
+    {
+        public readonly string? AppendedText;
+
+        public LogChangedEventArgs(string? Change = null)
+            : base()
+        {
+            this.AppendedText = Change;
+        }
+    }
+
+    public delegate void LogChangedEventHanlder(object? Sender, LogChangedEventArgs Args);
+
     public interface ILogger
     {
         public enum Levels
@@ -10,7 +23,7 @@
             Error
         }
 
-        public event EventHandler? LogChanged;
+        public event LogChangedEventHanlder? LogChanged;
 
         public string FormatMessage(Levels? Level, object? Sender, string Message);
         public void Verbose(string Message, object? Sender = null);
@@ -36,8 +49,4 @@
                     Error(Message, Sender);
                     break;
                 default:
-                    break;
-            }
-        }
-    }
-}
+              

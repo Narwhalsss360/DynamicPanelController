@@ -140,7 +140,7 @@ namespace DynamicPanelController
         private class ApplicationLogger : ILogger
         {
             public string CurrentLog { get; private set; } = string.Empty;
-            public event EventHandler? LogChanged;
+            public event LogChangedEventHanlder? LogChanged;
 
             public string FormatMessage(ILogger.Levels? Level, object? Sender, string Message)
             {
@@ -152,8 +152,9 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += FormatMessage(ILogger.Levels.Verbose, Sender, Message);
-                LogChanged?.Invoke(this, new EventArgs());
+                string? Appendage = FormatMessage(ILogger.Levels.Verbose, Sender, Message);
+                CurrentLog += Appendage;
+                LogChanged?.Invoke(this, new LogChangedEventArgs(Appendage));
             }
 
             public void Info(string Message, object? Sender = null)
@@ -161,8 +162,9 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += FormatMessage(ILogger.Levels.Info, Sender, Message);
-                LogChanged?.Invoke(this, new EventArgs());
+                string Appendage = FormatMessage(ILogger.Levels.Info, Sender, Message);
+                CurrentLog += Appendage;
+                LogChanged?.Invoke(this, new LogChangedEventArgs(Appendage));
             }
 
             public void Warn(string Message, object? Sender = null)
@@ -170,8 +172,9 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += FormatMessage(ILogger.Levels.Warning, Sender, Message);
-                LogChanged?.Invoke(this, new EventArgs());
+                string Appendage = FormatMessage(ILogger.Levels.Warning, Sender, Message);
+                CurrentLog += Appendage;
+                LogChanged?.Invoke(this, new LogChangedEventArgs(Appendage));
             }
 
             public void Error(string Message, object? Sender = null)
@@ -179,8 +182,9 @@ namespace DynamicPanelController
                 if (CurrentLog.Length > 0)
                     if (CurrentLog.Last() is not ('\r' or '\n'))
                         CurrentLog += '\n';
-                CurrentLog += FormatMessage(ILogger.Levels.Error, Sender, Message);
-                LogChanged?.Invoke(this, new EventArgs());
+                string Appendage = FormatMessage(ILogger.Levels.Error, Sender, Message);
+                CurrentLog += Appendage;
+                LogChanged?.Invoke(this, new LogChangedEventArgs(Appendage));
             }
 
             public string GetLog()
@@ -791,10 +795,12 @@ namespace DynamicPanelController
             Collector.Collect(Encoding.UTF8.GetBytes(Port.ReadExisting()));
         }
 
-        private void LogChanged(object? Sender, EventArgs Args)
+        private void LogChanged(object? Sender, LogChangedEventArgs Args)
         {
+            if (Args.AppendedText is null)
+                return;
             using var LogFile = new StreamWriter(Settings.LogDirectory, true);
-            LogFile.Write(Logger.GetLog());
+            LogFile.Write(Args.AppendedText);
         }
 
         private void SaveSettings()

@@ -30,7 +30,7 @@ namespace PanelExtension
         {
             private class DeadLog : ILogger
             {
-                public event EventHandler? LogChanged;
+                public event LogChangedEventHanlder? LogChanged;
 
                 public string FormatMessage(ILogger.Levels? Level, object? Sender, string Message)
                 {
