@@ -90,9 +90,12 @@ namespace DynamicPanelController
 
             public AppSettings(Serializable Serialized)
             {
-                ExtensionsDirectory = Serialized.ExtensionsDirectory;
-                ProfilesDirectory = Serialized.ProfilesDirectory;
-                LogDirectory = Serialized.LogDirectory;
+                if (Directory.Exists(Serialized.ExtensionsDirectory))
+                    ExtensionsDirectory = Serialized.ExtensionsDirectory;
+                if (Directory.Exists(Serialized.ProfilesDirectory))
+                    ProfilesDirectory = Serialized.ProfilesDirectory;
+                if (Directory.Exists(Serialized.LogDirectory))
+                    LogDirectory = Serialized.LogDirectory;
                 LogLevel = Serialized.LogLevel;
 
                 if (Serialized.GlobalPanelDescriptor is not null)
