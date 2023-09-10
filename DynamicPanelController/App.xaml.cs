@@ -772,7 +772,7 @@ namespace DynamicPanelController
                             RouteUpdate(MessageReceiveIDs.AbsolutePosition, AbsoluteInputID, BitConverter.ToDouble(ReceivedMessage.Data, 1));
                             break;
                         default:
-                            Logger.Log(ILogger.Levels.Error, $"Received Unkown Data from ID {ReceivedMessage.ID}", "Program");
+                            Logger.Log(ILogger.Levels.Error, $"Received Unkown Data from ID {ReceivedMessage.MessageID}", "Program");
                             return;
                     }
                     break;
