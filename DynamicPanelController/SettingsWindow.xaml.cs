@@ -80,8 +80,8 @@ namespace DynamicPanelController
         {
             if (GlobalOptionsPanel.SelectedIndex == -1)
                 return;
-            if (EditedSettings.GlobalSettings.ContainsKey(Options[GlobalOptionsPanel.SelectedIndex].Key))
-                _ = EditedSettings.GlobalSettings.Remove(Options[GlobalOptionsPanel.SelectedIndex].Key);
+            if (EditedSettings.GlobalOptions.ContainsKey(Options[GlobalOptionsPanel.SelectedIndex].Key))
+                _ = EditedSettings.GlobalOptions.Remove(Options[GlobalOptionsPanel.SelectedIndex].Key);
             Options.RemoveAt(GlobalOptionsPanel.SelectedIndex);
             GlobalOptionsPanel.Items.Refresh();
         }
@@ -89,11 +89,11 @@ namespace DynamicPanelController
         private void AddButtonClicked(object? Sender, EventArgs Args)
         {
             string KeyName = "New Key";
-            for (int i = 1; EditedSettings.GlobalSettings.ContainsKey(KeyName); i++)
+            for (int i = 1; EditedSettings.GlobalOptions.ContainsKey(KeyName); i++)
                 KeyName = $"New Key({i})";
 
-            EditedSettings.GlobalSettings.Add(KeyName, "New Value");
-            Options.Add(new(EditedSettings.GlobalSettings, KeyName, "New Value"));
+            EditedSettings.GlobalOptions.Add(KeyName, "New Value");
+            Options.Add(new(EditedSettings.GlobalOptions, KeyName, "New Value"));
             GlobalOptionsPanel.Items.Refresh();
         }
 
@@ -119,8 +119,8 @@ namespace DynamicPanelController
             ExtensionsDirectoryEntry.Text = EditedSettings.ExtensionsDirectory;
             ProfilesDirectoryEntry.Text = EditedSettings.ProfilesDirectory;
             LogDirectoryEntry.Text = EditedSettings.LogDirectory;
-            foreach (var KVP in EditedSettings.GlobalSettings)
-                Options.Add(new(EditedSettings.GlobalSettings, KVP.Key, KVP.Value));
+            foreach (var KVP in EditedSettings.GlobalOptions)
+                Options.Add(new(EditedSettings.GlobalOptions, KVP.Key, KVP.Value));
             GlobalOptionsPanel.ItemsSource = Options;
             for (int i = 0; i <= (int)ILogger.Levels.Error; i++)
                 _ = LogLevelSelector.Items.Add((ILogger.Levels)i);

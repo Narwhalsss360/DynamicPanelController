@@ -67,6 +67,7 @@ namespace PanelExtension
             public Type[] Actions { get; private set; } = new Type[0];
             public Type[] AbsoluteActions { get; private set; } = new Type[0];
             public Type[] Sources { get; private set; } = new Type[0];
+            public Dictionary<string, string?> GlobalOptions { get; private set; } = new();
 
             public ApplicationVariables()
             {

@@ -60,9 +60,9 @@ namespace DynamicPanelController
         {
             get
             {
-                if (Settings.GlobalSettings.ContainsKey("EmulatorEnabled"))
+                if (Settings.GlobalOptions.ContainsKey("EmulatorEnabled"))
                 {
-                    return Settings.GlobalSettings["EmulatorEnabled"].ToLower() == "true";
+                    return Settings.GlobalOptions["EmulatorEnabled"].ToLower() == "true";
                 }
                 else
                 {
@@ -80,7 +80,7 @@ namespace DynamicPanelController
             public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
             public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
             public PanelDescriptor? GlobalPanelDescriptor = null;
-            public Dictionary<string, string> GlobalSettings = new();
+            public Dictionary<string, string> GlobalOptions = new();
             public Dictionary<string, string> GlobalSettingsValidOptions = new();
             public ILogger.Levels LogLevel = ILogger.Levels.Verbose;
 
@@ -101,7 +101,7 @@ namespace DynamicPanelController
                 if (Serialized.GlobalPanelDescriptor is not null)
                     GlobalPanelDescriptor = new PanelDescriptor(Serialized.GlobalPanelDescriptor);
                 if (Serialized.GlobalSettings is not null)
-                    GlobalSettings = Serialized.GlobalSettings;
+                    GlobalOptions = Serialized.GlobalSettings;
                 if (Serialized.GlobalSettingsValidOptions is not null)
                     GlobalSettingsValidOptions = Serialized.GlobalSettingsValidOptions;
             }
@@ -128,7 +128,7 @@ namespace DynamicPanelController
                     LogDirectory = Settings.LogDirectory;
                     if (Settings.GlobalPanelDescriptor is not null)
                         GlobalPanelDescriptor = new PanelDescriptor.Serializable(Settings.GlobalPanelDescriptor);
-                    GlobalSettings = Settings.GlobalSettings;
+                    GlobalSettings = Settings.GlobalOptions;
                     GlobalSettingsValidOptions = Settings.GlobalSettingsValidOptions;
                     LogLevel = Settings.LogLevel;
                 }
@@ -530,6 +530,7 @@ namespace DynamicPanelController
             SetProperty<Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("CurrentProfileIndex", SelectedProfileIndex, Variables);
+            SetProperty<Extension.ApplicationVariables>("GlobalOptions", Settings.GlobalOptions, Variables);
             SetProperty<Extension>("Application", Variables, Extension);
         }
 
