@@ -44,7 +44,7 @@ namespace DynamicPanelController
         public List<Type> Actions = new();
         public List<Type> AbsoluteActions = new();
         public List<Type> Sources = new();
-        public List<object> InstantiatedPanelItems = new();
+        public List<object> OtherPanelItemInstances = new();
 
         public static readonly ushort PacketSize = 16;
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
@@ -87,8 +87,8 @@ namespace DynamicPanelController
                 {
                     SettingsChanged?.Invoke(this, new SettingsChangedEventArgs(value));
                     PanelExtensions.ForEach(E => InvokeMethod<Extension>("SettingsChangedWrapper", new object[] { null, new SettingsChangedEventArgs(value) }, E));
-                    InternalSettings = value;
                 }
+                InternalSettings = value;
             }
         }
         public event SettingsChangedEventHandler? SettingsChanged;
@@ -440,7 +440,7 @@ namespace DynamicPanelController
                         }
 
                         ExtensionsLoaded++;
-                        InstantiatedPanelItems.Add(Instance);
+                        OtherPanelItemInstances.Add(Instance);
                         Logger.Log(ILogger.Levels.Verbose, $"Loaded item {Type.FullName}.", "Progam");
                         break;
                     }
@@ -532,9 +532,14 @@ namespace DynamicPanelController
         private void RefreshPanelExtension(Extension? Extension)
         {
             if (Extension is null)
+            {
                 PanelExtensions.ForEach(E => SetPanelExtensionVariables(E));
+                OtherPanelItemInstances.ForEach(Instance => { if (Instance is Extension E) SetPanelExtensionVariables(E); });
+            }
             else
+            {
                 SetPanelExtensionVariables(Extension);
+            }
         }
 
         private object? UnsubscribePanelExtension(Extension Extension)
