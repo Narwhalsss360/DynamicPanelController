@@ -6,6 +6,13 @@ using System.Text.Json;
 
 namespace Profiling
 {
+    public enum PanelItemMappingTypes
+    {
+        ActionMapping,
+        AbsoluteActionMapping,
+        SourceMapping
+    }
+
     public class PanelProfile
     {
         public string Name { get; set; } = string.Empty;
