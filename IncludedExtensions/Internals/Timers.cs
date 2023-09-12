@@ -404,7 +404,7 @@ namespace IncludedExtensions.Internals
 
             if (ActionToDo.SetOptions(OptionsToSet) is string Message)
             {
-                Application.Logger.Log(ILogger.Levels.Warning, $"There was a problem settings options for {Options[ActionNameKey]}. {Message}", $"{Application.CurrentProfile?.Name} | Timer");
+                Application.Logger.Log(ILogger.Levels.Warning, $"There was a problem Settings options for {Options[ActionNameKey]}. {Message}", $"{Application.CurrentProfile?.Name} | Timer");
                 if (Options[DoAfterBadOptionsKey] == FalseEntry)
                     return;
             }

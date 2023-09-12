@@ -7,7 +7,7 @@ namespace DynamicPanelController
 {
     public partial class SettingsWindow : Window
     {
-        public App.AppSettings EditedSettings;
+        public ApplicationSettings EditedSettings;
         public App App = (App)Application.Current;
 
         private List<BindableDictionaryPair> Options { get; set; } = new();
@@ -19,9 +19,9 @@ namespace DynamicPanelController
 
         public SetSettings? SettingsSetter;
 
-        public SettingsWindow(App.AppSettings? SettingsTemplate = null, SetSettings? SettingsSetter = null)
+        public SettingsWindow(ApplicationSettings? SettingsTemplate = null, SetSettings? SettingsSetter = null)
         {
-            EditedSettings = SettingsTemplate ?? new App.AppSettings();
+            EditedSettings = SettingsTemplate is null ? new ApplicationSettings() : new(SettingsTemplate);
             this.SettingsSetter = SettingsSetter;
             InitializeComponent();
             Loaded += WindowLoaded;

@@ -152,7 +152,7 @@ namespace DynamicPanelController
                 ProfileSelection.SelectedIndex = 0;
         }
 
-        private void ProfileSelectionChanged(object? Sender, EventArgs Args)
+        private void ProfileSelectionChanged(object? Sender, SelectedProfileChangedEventArgs Args)
         {
             if (IgnoreNextSelectionChange)
             {
@@ -160,6 +160,7 @@ namespace DynamicPanelController
                 return;
             }
             UpdateProfileSelectionItems();
+            ProfileSelection.SelectedIndex = Args.NewIndex;
         }
 
         private void NewProfileButtonClicked(object? Sender, EventArgs Args)

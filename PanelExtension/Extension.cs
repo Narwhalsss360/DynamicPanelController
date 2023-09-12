@@ -1,4 +1,5 @@
 ﻿using Profiling;
+using System.Collections.Specialized;
 using System.Reflection;
 
 namespace PanelExtension
@@ -9,7 +10,35 @@ namespace PanelExtension
     public delegate object? PanelExtensionSubscriber(Extension Instance);
     public delegate object? PanelExtensionUnsubscriber(Extension Instance);
 
-    public class Extension
+    public class SettingsChangedEventArgs : EventArgs
+    {
+        public readonly ApplicationSettings NewSettings;
+
+        public SettingsChangedEventArgs(ApplicationSettings NewSettings)
+            : base()
+        {
+            this.NewSettings = NewSettings;
+        }
+    }
+
+    public delegate void SettingsChangedEventHandler(object? Sender, SettingsChangedEventArgs Args);
+
+    public class SelectedProfileChangedEventArgs : EventArgs
+    {
+        public readonly int NewIndex;
+        public readonly PanelProfile? NewProfile;
+
+        public SelectedProfileChangedEventArgs(int NewIndex, PanelProfile? NewProfile)
+            : base()
+        {
+            this.NewIndex = NewIndex;
+            this.NewProfile = NewProfile;
+        }
+    }
+
+    public delegate void SelectedProfileChangedEventHandler(object? Sender, SelectedProfileChangedEventArgs Args);
+
+    public class Extension : IDisposable
     {
         private static PanelExtensionSubscriber? Subscriber { get; set; }
         private static PanelExtensionUnsubscriber? Unsubscriber { get; set; }
@@ -21,10 +50,12 @@ namespace PanelExtension
         public object? ExtensionSubscriptionResult { get; private set; } = null;
 
         public event EventHandler? Exit;
-        public event EventHandler? ProfilesListChanged;
-        public event EventHandler? SelectedProfileChanged;
+        public event NotifyCollectionChangedEventHandler? ProfilesListChanged;
+        public event SelectedProfileChangedEventHandler? SelectedProfileChanged;
         public event EventHandler? CommunicationsStarted;
         public event EventHandler? CommunicationsStopped;
+        public event SettingsChangedEventHandler? SettingsChanged;
+        public event EventHandler? Disposed;
 
         public class ApplicationVariables
         {
@@ -67,7 +98,7 @@ namespace PanelExtension
             public Type[] Actions { get; private set; } = new Type[0];
             public Type[] AbsoluteActions { get; private set; } = new Type[0];
             public Type[] Sources { get; private set; } = new Type[0];
-            public Dictionary<string, string?> GlobalOptions { get; private set; } = new();
+            public ApplicationSettings Settings { get; private set; } = new();
 
             public ApplicationVariables()
             {
@@ -138,12 +169,12 @@ namespace PanelExtension
             return ExtensionSubscriptionResult;
         }
 
-        private void ProfilesListChangedWrapper(object? Sender, EventArgs Args)
+        private void ProfilesListChangedWrapper(object? Sender, NotifyCollectionChangedEventArgs Args)
         {
             ProfilesListChanged?.Invoke(Sender, Args);
         }
 
-        private void SelectedProfileChangedWrapper(object? Sender, EventArgs Args)
+        private void SelectedProfileChangedWrapper(object? Sender, SelectedProfileChangedEventArgs Args)
         {
             SelectedProfileChanged?.Invoke(Sender, Args);
         }
@@ -158,16 +189,35 @@ namespace PanelExtension
             CommunicationsStopped?.Invoke(Sender, Args);
         }
 
+        private void SettingsChangedWrapper(object? Sender, SettingsChangedEventArgs Args)
+        {
+            SettingsChanged?.Invoke(Sender, Args);
+        }
+
         private void ApplicationExiting(object? Sender, EventArgs Args)
         {
             Exit?.Invoke(Sender, Args);
         }
 
+        protected virtual void Dispose(bool Disposing)
+        {
+            if (!Disposing)
+                return;
+            if (!ExtensionSubscribed)
+                return;
+            _ = TryUnsubscribe();
+            Disposed?.Invoke(this, new EventArgs());
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
         ~Extension()
         {
-            if (ExtensionSubscribed)
-                if (TryUnsubscribe() is not null)
-                    throw new NotImplementedException("Could not unsubscribe on destructor.");
+            Dispose();
         }
     }
 }

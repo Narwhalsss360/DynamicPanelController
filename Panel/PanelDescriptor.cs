@@ -14,6 +14,15 @@ namespace Panel
         {
         }
 
+        public PanelDescriptor(PanelDescriptor Other)
+        {
+            DisplayCount = Other.DisplayCount;
+            DisplayTypes = Other.DisplayTypes;
+            DisplayDescriptor = Other.DisplayDescriptor;
+            ButtonCount = Other.ButtonCount;
+            AbsoluteCount = Other.AbsoluteCount;
+        }
+
         public PanelDescriptor(Serializable Serialized)
         {
             DisplayCount = (byte?)Serialized.DisplayCount;

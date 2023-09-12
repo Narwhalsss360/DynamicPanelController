@@ -1,8 +1,8 @@
 ﻿using NStreamCom;
-using Panel;
 using Panel.Communication;
 using PanelExtension;
 using Profiling;
+using Profiling.ProfilingTypes;
 using Profiling.ProfilingTypes.Mappings;
 using Profiling.ProfilingTypes.PanelItems;
 using System;
@@ -15,7 +15,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
 
@@ -35,20 +34,20 @@ namespace DynamicPanelController
             {
                 if (value >= Profiles.Count)
                     return;
+                SelectedProfileChanged?.Invoke(this, new SelectedProfileChangedEventArgs(value, value is >= 0 && value < Profiles.Count ? Profiles[value] : null));
+                PanelExtensions.ForEach(E => InvokeMethod<Extension>("SelectedProfileChangedWrapper", new object?[] { null, new SelectedProfileChangedEventArgs(value, value is >= 0 && value < Profiles.Count ? Profiles[value] : null) }, E));
                 SelectedProfileIndexContainer = value;
-                SelectedProfileChanged?.Invoke(this, new EventArgs());
-                PanelExtensions.ForEach(E => InvokeMethod<Extension>("SelectedProfileChangedWrapper", new object[] { this, new EventArgs() }, E));
             }
         }
-
-        public event EventHandler? SelectedProfileChanged;
+        public event SelectedProfileChangedEventHandler? SelectedProfileChanged;
 
         public List<Type> Actions = new();
         public List<Type> AbsoluteActions = new();
         public List<Type> Sources = new();
+        public List<object> InstantiatedPanelItems = new();
+
         public static readonly ushort PacketSize = 16;
         public SerialPort Port { get; private set; } = new SerialPort() { BaudRate = 115200 };
-
         private Thread SendSourceMappingsThread;
         private bool SuspendSendThread = false;
         private readonly PacketCollector Collector = new();
@@ -60,9 +59,9 @@ namespace DynamicPanelController
         {
             get
             {
-                if (Settings.GlobalOptions.ContainsKey("EmulatorEnabled"))
+                if (Settings.GlobalOptions.ContainsKey("Emulator Enable"))
                 {
-                    return Settings.GlobalOptions["EmulatorEnabled"].ToLower() == "true";
+                    return Settings.GlobalOptions["Emulator Enable"].ToLower() == "true";
                 }
                 else
                 {
@@ -72,70 +71,27 @@ namespace DynamicPanelController
         }
         private bool Emulating = false;
         public EmulatorDisplayOut? EmulatorDisplay = null;
+        public event EventHandler? CommunicationsStarted;
+        public event EventHandler? CommunicationsStopped;
 
-        public struct AppSettings
+        private ApplicationSettings InternalSettings = new();
+        public ApplicationSettings Settings
         {
-            public string FilePath = $"{Environment.CurrentDirectory}\\Settings.json";
-            public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
-            public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
-            public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
-            public PanelDescriptor? GlobalPanelDescriptor = null;
-            public Dictionary<string, string> GlobalOptions = new();
-            public Dictionary<string, string> GlobalSettingsValidOptions = new();
-            public ILogger.Levels LogLevel = ILogger.Levels.Verbose;
-
-            public AppSettings()
+            get
             {
+                return InternalSettings;
             }
-
-            public AppSettings(Serializable Serialized)
+            set
             {
-                if (Directory.Exists(Serialized.ExtensionsDirectory))
-                    ExtensionsDirectory = Serialized.ExtensionsDirectory;
-                if (Directory.Exists(Serialized.ProfilesDirectory))
-                    ProfilesDirectory = Serialized.ProfilesDirectory;
-                if (Directory.Exists(Serialized.LogDirectory))
-                    LogDirectory = Serialized.LogDirectory;
-                LogLevel = Serialized.LogLevel;
-
-                if (Serialized.GlobalPanelDescriptor is not null)
-                    GlobalPanelDescriptor = new PanelDescriptor(Serialized.GlobalPanelDescriptor);
-                if (Serialized.GlobalSettings is not null)
-                    GlobalOptions = Serialized.GlobalSettings;
-                if (Serialized.GlobalSettingsValidOptions is not null)
-                    GlobalSettingsValidOptions = Serialized.GlobalSettingsValidOptions;
-            }
-
-            public class Serializable
-            {
-                public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
-                public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
-                public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
-                public PanelDescriptor.Serializable? GlobalPanelDescriptor { set; get; } = null;
-                public Dictionary<string, string>? GlobalSettings { set; get; } = new();
-                public Dictionary<string, string>? GlobalSettingsValidOptions { set; get; } = new();
-                public ILogger.Levels LogLevel { set; get; } = ILogger.Levels.Verbose;
-
-                [JsonConstructor]
-                public Serializable()
+                if (InternalSettings != value)
                 {
-                }
-
-                public Serializable(AppSettings Settings)
-                {
-                    ExtensionsDirectory = Settings.ExtensionsDirectory;
-                    ProfilesDirectory = Settings.ProfilesDirectory;
-                    LogDirectory = Settings.LogDirectory;
-                    if (Settings.GlobalPanelDescriptor is not null)
-                        GlobalPanelDescriptor = new PanelDescriptor.Serializable(Settings.GlobalPanelDescriptor);
-                    GlobalSettings = Settings.GlobalOptions;
-                    GlobalSettingsValidOptions = Settings.GlobalSettingsValidOptions;
-                    LogLevel = Settings.LogLevel;
+                    SettingsChanged?.Invoke(this, new SettingsChangedEventArgs(value));
+                    PanelExtensions.ForEach(E => InvokeMethod<Extension>("SettingsChangedWrapper", new object[] { null, new SettingsChangedEventArgs(value) }, E));
+                    InternalSettings = value;
                 }
             }
         }
-
-        public AppSettings Settings = new();
+        public event SettingsChangedEventHandler? SettingsChanged;
 
         private class ApplicationLogger : ILogger
         {
@@ -192,11 +148,7 @@ namespace DynamicPanelController
                 return CurrentLog;
             }
         }
-
         public static readonly ILogger Logger = new ApplicationLogger();
-
-        public event EventHandler? CommunicationsStarted;
-        public event EventHandler? CommunicationsStopped;
 
         private readonly List<Extension> PanelExtensions = new();
 
@@ -335,7 +287,8 @@ namespace DynamicPanelController
         {
             try
             {
-                _ = Activator.CreateInstance(Type);
+                if (Activator.CreateInstance(Type) is Extension PanelExtension)
+                    PanelExtension.Dispose();
             }
             catch (Exception E)
             {
@@ -413,7 +366,8 @@ namespace DynamicPanelController
 
                         AbsoluteActions.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Absolute Action {Type.FullName}", "Program");
+                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Absolute Action {Type.FullName}.", "Program");
+                        break;
                     }
                     else if (Interface == typeof(IPanelAction))
                     {
@@ -430,7 +384,8 @@ namespace DynamicPanelController
 
                         Actions.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Action {Type.FullName}", "Program");
+                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Action {Type.FullName}.", "Program");
+                        break;
                     }
                     else if (Interface == typeof(IPanelSource))
                     {
@@ -447,7 +402,47 @@ namespace DynamicPanelController
 
                         Sources.Add(Type);
                         ExtensionsLoaded++;
-                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Source {Type.FullName}", "Program");
+                        Logger.Log(ILogger.Levels.Verbose, $"Loaded Source {Type.FullName}.", "Program");
+                        break;
+                    }
+                    else if (Interface == typeof(IPanelItem))
+                    {
+                        if (Type.GetCustomAttribute<PanelItemDescriptorAttribute>() is null)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Type {Type.FullName} from assembly {AssemblyToLoad.FullName} does not have PanelItemDescriptorAttribute.", "Program");
+                            continue;
+                        }
+                        if (TestInstantiation(Type) is string ExceptionMessage)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Cannot instantiate extension {Type.Name}.\n{ExceptionMessage}", "Program");
+                            return -4;
+                        }
+                        object? Instance = Activator.CreateInstance(Type);
+                        if (Instance is null)
+                        {
+                            Logger.Log(ILogger.Levels.Error, $"Cannot instantiate extension {Type.Name}.", "Program");
+                            return -4;
+                        }
+
+                        if (Type.GetCustomAttribute<PanelItemGlobalValidOptionsAttribute>() is PanelItemGlobalValidOptionsAttribute ValidOptionsContainer)
+                        {
+                            foreach (string ValidOptionStringList in ValidOptionsContainer.ValidOptions)
+                            {
+                                string[] ValidOptionsSplit = ValidOptionStringList.Split('|');
+                                if (!Settings.GlobalSettingsValidOptions.ContainsKey(ValidOptionsSplit[0]))
+                                {
+                                    string[] ValidValues = new string[ValidOptionsSplit.Length - 1];
+                                    for (int i = 1; i < ValidOptionsSplit.Length; i++)
+                                        ValidValues[i - 1] = ValidOptionsSplit[i];
+                                    Settings.GlobalSettingsValidOptions.Add(ValidOptionsSplit[0], ValidValues);
+                                }
+                            }
+                        }
+
+                        ExtensionsLoaded++;
+                        InstantiatedPanelItems.Add(Instance);
+                        Logger.Log(ILogger.Levels.Verbose, $"Loaded item {Type.FullName}.", "Progam");
+                        break;
                     }
                 }
             }
@@ -492,19 +487,19 @@ namespace DynamicPanelController
         {
             if (!File.Exists(Settings.FilePath))
             {
-                Logger.Log(ILogger.Levels.Error, $"Could not find settings file @ {Settings.FilePath}", "Program");
+                Logger.Log(ILogger.Levels.Error, $"Could not find Settings file @ {Settings.FilePath}", "Program");
                 return;
             }
 
             using var SettingsFile = new StreamReader(Settings.FilePath);
-            AppSettings.Serializable? Deserialized = null;
+            ApplicationSettings.Serializable? Deserialized = null;
             try
             {
-                Deserialized = JsonSerializer.Deserialize<AppSettings.Serializable>(SettingsFile.ReadToEnd());
+                Deserialized = JsonSerializer.Deserialize<ApplicationSettings.Serializable>(SettingsFile.ReadToEnd());
             }
             catch (JsonException Ex)
             {
-                Logger.Log(ILogger.Levels.Error, $"Exception occured while loading settings {Ex.Message}. Loading default settings.", "Program");
+                Logger.Log(ILogger.Levels.Error, $"Exception occured while loading Settings {Ex.Message}. Loading default Settings.", "Program");
             }
             if (Deserialized is not null)
                 Settings = new(Deserialized);
@@ -512,7 +507,7 @@ namespace DynamicPanelController
 
         private object? SubscribePanelExtension(Extension Extension)
         {
-            if (PanelExtensions.Contains(Extension))
+            if (PanelExtensions.Find(E => ReferenceEquals(E, Extension)) is not null)
                 return "Already subscribed.";
             PanelExtensions.Add(Extension);
             SetPanelExtensionVariables(Extension);
@@ -530,7 +525,7 @@ namespace DynamicPanelController
             SetProperty<Extension.ApplicationVariables>("AbsoluteActions", AbsoluteActions.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("Sources", Sources.ToArray(), Variables);
             SetProperty<Extension.ApplicationVariables>("CurrentProfileIndex", SelectedProfileIndex, Variables);
-            SetProperty<Extension.ApplicationVariables>("GlobalOptions", Settings.GlobalOptions, Variables);
+            SetProperty<Extension.ApplicationVariables>("Settings", Settings, Variables);
             SetProperty<Extension>("Application", Variables, Extension);
         }
 
@@ -544,7 +539,7 @@ namespace DynamicPanelController
 
         private object? UnsubscribePanelExtension(Extension Extension)
         {
-            if (PanelExtensions.Contains(Extension))
+            if (PanelExtensions.Find(E => ReferenceEquals(E, Extension)) is null)
                 return "Not subscribed.";
             _ = PanelExtensions.Remove(Extension);
             return null;
@@ -807,7 +802,7 @@ namespace DynamicPanelController
         private void SaveSettings()
         {
             using var SettingsFile = new StreamWriter(Settings.FilePath);
-            SettingsFile.Write(JsonSerializer.Serialize(new AppSettings.Serializable(Settings), options: new JsonSerializerOptions() { WriteIndented = true }));
+            SettingsFile.Write(JsonSerializer.Serialize(new ApplicationSettings.Serializable(Settings), options: new JsonSerializerOptions() { WriteIndented = true }));
         }
 
         public void SortProfiles()
@@ -833,7 +828,10 @@ namespace DynamicPanelController
             DirectoryInfo DirectoryInfo = new(Settings.ProfilesDirectory);
             if (!DirectoryInfo.Exists)
             {
-                Settings.ProfilesDirectory = new AppSettings().ProfilesDirectory;
+                ApplicationSettings ModifiedSettings = Settings;
+                ModifiedSettings.ProfilesDirectory = new ApplicationSettings().ProfilesDirectory;
+                Settings = ModifiedSettings;
+
                 DirectoryInfo = new(Settings.ProfilesDirectory);
                 if (!DirectoryInfo.Exists)
                     Directory.CreateDirectory(Settings.ProfilesDirectory);
