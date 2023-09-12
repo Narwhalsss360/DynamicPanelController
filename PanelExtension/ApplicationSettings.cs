@@ -5,7 +5,7 @@ namespace PanelExtension
 {
     public class ApplicationSettings
     {
-        public string FilePath = $"{Environment.CurrentDirectory}\\NewSettings.json";
+        public string FilePath = $"{Environment.CurrentDirectory}\\Settings.json";
         public string ExtensionsDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Extensions";
         public string ProfilesDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Profiles";
         public string LogDirectory { get; set; } = $"{Environment.CurrentDirectory}\\Log.txt";
